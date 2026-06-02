@@ -1,5 +1,5 @@
 const express = require('express');
-const { getDb } = require('../config/database');
+const { supabase } = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { requireMinRole } = require('../middleware/rbac');
 
@@ -25,168 +25,297 @@ function calcFine(dueDate, returnDate) {
   return days > 0 ? +(days * FINE_PER_DAY).toFixed(2) : 0;
 }
 
+function enrichLoan(t) {
+  const t_today = today();
+  const is_overdue = t.status === 'active' && t.due_date < t_today ? 1 : 0;
+  const current_fine = is_overdue ? calcFine(t.due_date, t_today) : (t.fine_amount || 0);
+  return {
+    ...t,
+    title: t.books?.title,
+    author: t.books?.author,
+    isbn: t.books?.isbn,
+    books: undefined,
+    is_overdue,
+    current_fine,
+  };
+}
+
 // User: view own loans
-router.get('/my', authenticate, (req, res) => {
-  const t = today();
-  const loans = getDb().prepare(`
-    SELECT t.*, b.title, b.author, b.isbn,
-      CASE WHEN t.status = 'active' AND t.due_date < ? THEN 1 ELSE 0 END AS is_overdue,
-      CASE
-        WHEN t.status = 'active' AND t.due_date < ?
-        THEN ROUND((julianday(?) - julianday(t.due_date)) * ?, 2)
-        ELSE t.fine_amount
-      END AS current_fine
-    FROM transactions t
-    JOIN books b ON t.book_id = b.id
-    WHERE t.user_id = ?
-    ORDER BY t.id DESC
-  `).all(t, t, t, FINE_PER_DAY, req.user.id);
-  res.json(loans);
+router.get('/my', authenticate, async (req, res) => {
+  try {
+    const { data: loans, error } = await supabase
+      .from('transactions')
+      .select('*, books(title, author, isbn)')
+      .eq('user_id', req.user.id)
+      .order('id', { ascending: false });
+
+    if (error) return res.status(500).json({ message: error.message });
+    res.json(loans.map(enrichLoan));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // User: request a book
-router.post('/request', authenticate, (req, res) => {
-  const { book_id } = req.body;
-  if (!book_id) return res.status(400).json({ message: 'book_id required' });
+router.post('/request', authenticate, async (req, res) => {
+  try {
+    const { book_id } = req.body;
+    if (!book_id) return res.status(400).json({ message: 'book_id required' });
 
-  const book = getDb().prepare('SELECT * FROM books WHERE id = ?').get(book_id);
-  if (!book) return res.status(404).json({ message: 'Book not found' });
+    const { data: book } = await supabase.from('books').select('id').eq('id', book_id).maybeSingle();
+    if (!book) return res.status(404).json({ message: 'Book not found' });
 
-  const existing = getDb()
-    .prepare("SELECT id FROM transactions WHERE user_id = ? AND book_id = ? AND status IN ('pending', 'active')")
-    .get(req.user.id, book_id);
-  if (existing) return res.status(400).json({ message: 'You already have an active or pending request for this book' });
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('book_id', book_id)
+      .in('status', ['pending', 'active'])
+      .maybeSingle();
 
-  const result = getDb()
-    .prepare("INSERT INTO transactions (user_id, book_id, status) VALUES (?, ?, 'pending')")
-    .run(req.user.id, book_id);
+    if (existing) return res.status(400).json({ message: 'You already have an active or pending request for this book' });
 
-  res.status(201).json({ message: 'Borrow request submitted', id: result.lastInsertRowid });
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert({ user_id: req.user.id, book_id, status: 'pending' })
+      .select('id')
+      .single();
+
+    if (error) return res.status(500).json({ message: error.message });
+    res.status(201).json({ message: 'Borrow request submitted', id: data.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Admin+: list all loans with filters
-router.get('/', authenticate, requireMinRole('admin'), (req, res) => {
-  const { status, user_id, page = 1, limit = 20 } = req.query;
-  const offset = (Number(page) - 1) * Number(limit);
-  const t = today();
+router.get('/', authenticate, requireMinRole('admin'), async (req, res) => {
+  try {
+    const { status, user_id, page = 1, limit = 20 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
 
-  const conditions = [];
-  const params = [];
-  if (status) { conditions.push('t.status = ?'); params.push(status); }
-  if (user_id) { conditions.push('t.user_id = ?'); params.push(user_id); }
-  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+    let query = supabase
+      .from('transactions')
+      .select(`
+        *,
+        books(title, author, isbn),
+        user_data:users!user_id(name, email),
+        admin_data:users!issued_by(name)
+      `, { count: 'exact' });
 
-  const { count: total } = getDb()
-    .prepare(`SELECT COUNT(*) as count FROM transactions t ${where}`)
-    .get(...params);
+    if (status) query = query.eq('status', status);
+    if (user_id) query = query.eq('user_id', user_id);
 
-  const loans = getDb().prepare(`
-    SELECT t.*, b.title, b.author, b.isbn,
-      u.name AS user_name, u.email AS user_email,
-      a.name AS issued_by_name,
-      CASE WHEN t.status = 'active' AND t.due_date < ? THEN 1 ELSE 0 END AS is_overdue,
-      CASE
-        WHEN t.status = 'active' AND t.due_date < ?
-        THEN ROUND((julianday(?) - julianday(t.due_date)) * ?, 2)
-        ELSE t.fine_amount
-      END AS current_fine
-    FROM transactions t
-    JOIN books b ON t.book_id = b.id
-    JOIN users u ON t.user_id = u.id
-    LEFT JOIN users a ON t.issued_by = a.id
-    ${where}
-    ORDER BY t.id DESC LIMIT ? OFFSET ?
-  `).all(t, t, t, FINE_PER_DAY, ...params, Number(limit), offset);
+    const { data: raw, count: total, error } = await query
+      .order('id', { ascending: false })
+      .range(offset, offset + Number(limit) - 1);
 
-  res.json({ loans, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+    if (error) return res.status(500).json({ message: error.message });
+
+    const t_today = today();
+    const loans = raw.map(t => {
+      const is_overdue = t.status === 'active' && t.due_date < t_today ? 1 : 0;
+      const current_fine = is_overdue ? calcFine(t.due_date, t_today) : (t.fine_amount || 0);
+      return {
+        ...t,
+        title: t.books?.title,
+        author: t.books?.author,
+        isbn: t.books?.isbn,
+        user_name: t.user_data?.name,
+        user_email: t.user_data?.email,
+        issued_by_name: t.admin_data?.name,
+        books: undefined,
+        user_data: undefined,
+        admin_data: undefined,
+        is_overdue,
+        current_fine,
+      };
+    });
+
+    res.json({ loans, total, page: Number(page), pages: Math.ceil(total / Number(limit)) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Admin+: issue a pending loan
-router.post('/:id/issue', authenticate, requireMinRole('admin'), (req, res) => {
-  const db = getDb();
-  const loan = db.prepare('SELECT * FROM transactions WHERE id = ?').get(req.params.id);
-  if (!loan) return res.status(404).json({ message: 'Loan not found' });
-  if (loan.status !== 'pending') return res.status(400).json({ message: 'Loan is not pending' });
+router.post('/:id/issue', authenticate, requireMinRole('admin'), async (req, res) => {
+  try {
+    const { data: loan } = await supabase.from('transactions').select('*').eq('id', req.params.id).single();
+    if (!loan) return res.status(404).json({ message: 'Loan not found' });
+    if (loan.status !== 'pending') return res.status(400).json({ message: 'Loan is not pending' });
 
-  const book = db.prepare('SELECT * FROM books WHERE id = ?').get(loan.book_id);
-  if (book.available_copies < 1) return res.status(400).json({ message: 'No copies available' });
+    const { data: book } = await supabase.from('books').select('available_copies').eq('id', loan.book_id).single();
+    if (book.available_copies < 1) return res.status(400).json({ message: 'No copies available' });
 
-  const borrowDate = today();
-  const dueDate = addDays(borrowDate, LOAN_DAYS);
+    const borrowDate = today();
+    const dueDate = addDays(borrowDate, LOAN_DAYS);
 
-  db.prepare("UPDATE transactions SET status='active', issued_by=?, borrow_date=?, due_date=? WHERE id=?")
-    .run(req.user.id, borrowDate, dueDate, loan.id);
-  db.prepare('UPDATE books SET available_copies = available_copies - 1 WHERE id = ?').run(loan.book_id);
+    await supabase
+      .from('transactions')
+      .update({ status: 'active', issued_by: req.user.id, borrow_date: borrowDate, due_date: dueDate })
+      .eq('id', loan.id);
 
-  res.json({ message: 'Book issued successfully', due_date: dueDate });
+    await supabase
+      .from('books')
+      .update({ available_copies: book.available_copies - 1 })
+      .eq('id', loan.book_id);
+
+    res.json({ message: 'Book issued successfully', due_date: dueDate });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Admin+: return an active loan
-router.post('/:id/return', authenticate, requireMinRole('admin'), (req, res) => {
-  const db = getDb();
-  const loan = db.prepare('SELECT * FROM transactions WHERE id = ?').get(req.params.id);
-  if (!loan) return res.status(404).json({ message: 'Loan not found' });
-  if (loan.status !== 'active') return res.status(400).json({ message: 'Loan is not active' });
+router.post('/:id/return', authenticate, requireMinRole('admin'), async (req, res) => {
+  try {
+    const { data: loan } = await supabase.from('transactions').select('*').eq('id', req.params.id).single();
+    if (!loan) return res.status(404).json({ message: 'Loan not found' });
+    if (loan.status !== 'active') return res.status(400).json({ message: 'Loan is not active' });
 
-  const returnDate = today();
-  const fine = calcFine(loan.due_date, returnDate);
+    const returnDate = today();
+    const fine = calcFine(loan.due_date, returnDate);
 
-  db.prepare("UPDATE transactions SET status='returned', return_date=?, fine_amount=? WHERE id=?")
-    .run(returnDate, fine, loan.id);
-  db.prepare('UPDATE books SET available_copies = available_copies + 1 WHERE id = ?').run(loan.book_id);
+    await supabase
+      .from('transactions')
+      .update({ status: 'returned', return_date: returnDate, fine_amount: fine })
+      .eq('id', loan.id);
 
-  res.json({ message: 'Book returned', fine_amount: fine });
+    const { data: book } = await supabase.from('books').select('available_copies').eq('id', loan.book_id).single();
+    await supabase
+      .from('books')
+      .update({ available_copies: book.available_copies + 1 })
+      .eq('id', loan.book_id);
+
+    res.json({ message: 'Book returned', fine_amount: fine });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Admin+: reject a pending request
-router.post('/:id/reject', authenticate, requireMinRole('admin'), (req, res) => {
-  const loan = getDb().prepare('SELECT * FROM transactions WHERE id = ?').get(req.params.id);
-  if (!loan) return res.status(404).json({ message: 'Loan not found' });
-  if (loan.status !== 'pending') return res.status(400).json({ message: 'Loan is not pending' });
+router.post('/:id/reject', authenticate, requireMinRole('admin'), async (req, res) => {
+  try {
+    const { data: loan } = await supabase.from('transactions').select('status').eq('id', req.params.id).single();
+    if (!loan) return res.status(404).json({ message: 'Loan not found' });
+    if (loan.status !== 'pending') return res.status(400).json({ message: 'Loan is not pending' });
 
-  getDb().prepare("UPDATE transactions SET status='rejected' WHERE id=?").run(req.params.id);
-  res.json({ message: 'Request rejected' });
+    await supabase.from('transactions').update({ status: 'rejected' }).eq('id', req.params.id);
+    res.json({ message: 'Request rejected' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Admin+: mark fine as paid
-router.post('/:id/pay-fine', authenticate, requireMinRole('admin'), (req, res) => {
-  getDb().prepare('UPDATE transactions SET fine_paid=1 WHERE id=?').run(req.params.id);
-  res.json({ message: 'Fine marked as paid' });
+router.post('/:id/pay-fine', authenticate, requireMinRole('admin'), async (req, res) => {
+  try {
+    await supabase.from('transactions').update({ fine_paid: 1 }).eq('id', req.params.id);
+    res.json({ message: 'Fine marked as paid' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // Superadmin: library-wide statistics
-router.get('/stats/overview', authenticate, requireMinRole('superadmin'), (req, res) => {
-  const db = getDb();
-  const t = today();
+router.get('/stats/overview', authenticate, requireMinRole('superadmin'), async (req, res) => {
+  try {
+    const t = today();
 
-  res.json({
-    totalBooks:         db.prepare('SELECT COUNT(*) as c FROM books').get().c,
-    totalCopies:        db.prepare('SELECT SUM(total_copies) as c FROM books').get().c || 0,
-    totalUsers:         db.prepare("SELECT COUNT(*) as c FROM users WHERE role = 'user' AND is_active = 1").get().c,
-    activeLoans:        db.prepare("SELECT COUNT(*) as c FROM transactions WHERE status = 'active'").get().c,
-    pendingRequests:    db.prepare("SELECT COUNT(*) as c FROM transactions WHERE status = 'pending'").get().c,
-    overdueLoans:       db.prepare("SELECT COUNT(*) as c FROM transactions WHERE status = 'active' AND due_date < ?").get(t).c,
-    totalFinesCollected:db.prepare('SELECT COALESCE(SUM(fine_amount),0) as s FROM transactions WHERE fine_paid = 1').get().s,
-    totalFinesPending:  db.prepare('SELECT COALESCE(SUM(fine_amount),0) as s FROM transactions WHERE fine_paid = 0 AND fine_amount > 0').get().s,
-    mostBorrowed: db.prepare(`
-      SELECT b.title, b.author, COUNT(*) AS borrow_count
-      FROM transactions t JOIN books b ON t.book_id = b.id
-      WHERE t.status != 'pending'
-      GROUP BY b.id ORDER BY borrow_count DESC LIMIT 5
-    `).all(),
-    recentActivity: db.prepare(`
-      SELECT t.id, t.status, t.borrow_date, t.return_date, b.title, u.name AS user_name
-      FROM transactions t
-      JOIN books b ON t.book_id = b.id
-      JOIN users u ON t.user_id = u.id
-      ORDER BY t.id DESC LIMIT 10
-    `).all(),
-    loansByMonth: db.prepare(`
-      SELECT strftime('%Y-%m', borrow_date) AS month, COUNT(*) AS count
-      FROM transactions WHERE borrow_date IS NOT NULL
-      GROUP BY month ORDER BY month DESC LIMIT 6
-    `).all(),
-  });
+    const [
+      { count: totalBooks },
+      { data: booksData },
+      { count: totalUsers },
+      { count: activeLoans },
+      { count: pendingRequests },
+      { count: overdueLoans },
+      { data: finesPaidData },
+      { data: finesPendingData },
+      { data: allTransactions },
+      { data: recentRaw },
+      { data: loanDates },
+    ] = await Promise.all([
+      supabase.from('books').select('*', { count: 'exact', head: true }),
+      supabase.from('books').select('total_copies'),
+      supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'user').eq('is_active', 1),
+      supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+      supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('transactions').select('*', { count: 'exact', head: true }).eq('status', 'active').lt('due_date', t),
+      supabase.from('transactions').select('fine_amount').eq('fine_paid', 1),
+      supabase.from('transactions').select('fine_amount').eq('fine_paid', 0).gt('fine_amount', 0),
+      supabase.from('transactions').select('book_id, books(title, author)').neq('status', 'pending'),
+      supabase.from('transactions')
+        .select('id, status, borrow_date, return_date, books(title), user_data:users!user_id(name)')
+        .order('id', { ascending: false })
+        .limit(10),
+      supabase.from('transactions').select('borrow_date').not('borrow_date', 'is', null),
+    ]);
+
+    const totalCopies = (booksData || []).reduce((sum, b) => sum + (b.total_copies || 0), 0);
+    const totalFinesCollected = (finesPaidData || []).reduce((sum, t) => sum + (t.fine_amount || 0), 0);
+    const totalFinesPending = (finesPendingData || []).reduce((sum, t) => sum + (t.fine_amount || 0), 0);
+
+    // Aggregate most-borrowed books in JS
+    const bookBorrowCount = {};
+    const bookInfo = {};
+    for (const tx of (allTransactions || [])) {
+      bookBorrowCount[tx.book_id] = (bookBorrowCount[tx.book_id] || 0) + 1;
+      if (tx.books) bookInfo[tx.book_id] = tx.books;
+    }
+    const mostBorrowed = Object.entries(bookBorrowCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([book_id, borrow_count]) => ({
+        title: bookInfo[book_id]?.title || '',
+        author: bookInfo[book_id]?.author || '',
+        borrow_count,
+      }));
+
+    const recentActivity = (recentRaw || []).map(tx => ({
+      id: tx.id,
+      status: tx.status,
+      borrow_date: tx.borrow_date,
+      return_date: tx.return_date,
+      title: tx.books?.title,
+      user_name: tx.user_data?.name,
+    }));
+
+    // Aggregate loans by month in JS
+    const monthCount = {};
+    for (const tx of (loanDates || [])) {
+      const month = tx.borrow_date?.slice(0, 7);
+      if (month) monthCount[month] = (monthCount[month] || 0) + 1;
+    }
+    const loansByMonth = Object.entries(monthCount)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6)
+      .map(([month, count]) => ({ month, count }));
+
+    res.json({
+      totalBooks,
+      totalCopies,
+      totalUsers,
+      activeLoans,
+      pendingRequests,
+      overdueLoans,
+      totalFinesCollected: +totalFinesCollected.toFixed(2),
+      totalFinesPending: +totalFinesPending.toFixed(2),
+      mostBorrowed,
+      recentActivity,
+      loansByMonth,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;

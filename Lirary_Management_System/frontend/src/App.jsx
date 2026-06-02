@@ -2,8 +2,11 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import Home     from './pages/Home';
 import Login    from './pages/Login';
 import Register from './pages/Register';
+import Profile  from './pages/Profile';
+import Settings from './pages/Settings';
 
 import UserLayout       from './pages/user/UserLayout';
 import BookCatalog      from './pages/user/BookCatalog';
@@ -34,8 +37,10 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index          element={<BookCatalog />} />
-          <Route path="history" element={<BorrowingHistory />} />
+          <Route index           element={<BookCatalog />} />
+          <Route path="history"  element={<BorrowingHistory />} />
+          <Route path="profile"  element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* Admin dashboard */}
@@ -47,9 +52,11 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index         element={<AdminDashboard />} />
-          <Route path="books"  element={<BookManagement />} />
-          <Route path="loans"  element={<LoanManagement />} />
+          <Route index           element={<AdminDashboard />} />
+          <Route path="books"    element={<BookManagement />} />
+          <Route path="loans"    element={<LoanManagement />} />
+          <Route path="profile"  element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
         {/* Superadmin dashboard */}
@@ -61,12 +68,14 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index         element={<SuperadminDashboard />} />
-          <Route path="users"  element={<UserManagement />} />
+          <Route index           element={<SuperadminDashboard />} />
+          <Route path="users"    element={<UserManagement />} />
+          <Route path="profile"  element={<Profile />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
 
-        <Route path="/"   element={<Navigate to="/user" replace />} />
-        <Route path="*"   element={<Navigate to="/user" replace />} />
+        <Route path="/"   element={<Home />} />
+        <Route path="*"   element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   );

@@ -1,18 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const ROLE_HOME = { superadmin: '/superadmin', admin: '/admin', user: '/user' };
 
+const DEMO_ACCOUNTS = [
+  { role: 'Superadmin', email: 'superadmin@library.com', pw: 'admin123', badge: 'bg-purple-100 text-purple-700' },
+  { role: 'Admin',      email: 'admin@library.com',      pw: 'admin123', badge: 'bg-amber-100 text-amber-700'  },
+  { role: 'Student',    email: 'user@library.com',        pw: 'user123',  badge: 'bg-blue-100 text-blue-700'   },
+];
+
 export default function Login() {
   const { login, user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const navigate        = useNavigate();
+  const location        = useLocation();
+
+  const [form, setForm]       = useState({ email: '', password: '' });
+  const [showPw, setShowPw]   = useState(false);
+  const [error, setError]     = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) navigate(ROLE_HOME[user.role] || '/user', { replace: true });
+  useEffect(() => {
+    if (user) navigate(ROLE_HOME[user.role] || '/user', { replace: true });
+  }, [user, navigate]);
 
   const successMsg = location.state?.message;
 
@@ -24,38 +34,51 @@ export default function Login() {
       const u = await login(form.email, form.password);
       navigate(ROLE_HOME[u.role] || '/user', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fill = (email, password) => setForm({ email, password });
+  const fill = (email, pw) => {
+    setForm({ email, password: pw });
+    setError('');
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">📚</div>
-          <h1 className="text-3xl font-bold text-gray-900">LibraryMS</h1>
-          <p className="text-gray-500 mt-1 text-sm">Library Management System</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-12">
 
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-8">
+        <span className="text-2xl">📚</span>
+        <span className="font-bold text-gray-900 text-lg">LibraryMS</span>
+        <span className="text-xs text-gray-400 ml-1">— RUPP</span>
+      </div>
+
+      {/* Card */}
+      <div className="w-full max-w-sm bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Sign in</h1>
+        <p className="text-sm text-gray-500 mb-6">Access your library dashboard</p>
+
+        {/* Success */}
         {successMsg && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-            {successMsg}
+          <div className="mb-4 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+            <span>✓</span> {successMsg}
           </div>
         )}
 
+        {/* Error */}
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
+          <div className="mb-4 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <span>✕</span> {error}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="label">Email address</label>
+            <label className="label">Email</label>
             <input
               type="email"
               className="input"
@@ -65,52 +88,76 @@ export default function Login() {
               required
             />
           </div>
+
           <div>
             <label className="label">Password</label>
-            <input
-              type="password"
-              className="input"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPw ? 'text' : 'password'}
+                className="input pr-10"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
+              >
+                {showPw ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
-          <button type="submit" className="btn-primary w-full py-2.5" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full py-2.5"
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Signing in…
+              </>
+            ) : 'Sign In →'}
           </button>
         </form>
 
-        <p className="text-center mt-5 text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-700 font-medium hover:underline">
-            Register
+        <p className="text-center mt-5 text-sm text-gray-500">
+          No account?{' '}
+          <Link to="/register" className="text-blue-600 font-semibold hover:underline">
+            Register free
           </Link>
         </p>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Demo accounts</p>
-          <div className="space-y-1">
-            {[
-              { role: 'Superadmin', email: 'superadmin@library.com', pw: 'admin123', badgeClass: 'bg-purple-100 text-purple-700' },
-              { role: 'Admin',      email: 'admin@library.com',      pw: 'admin123', badgeClass: 'bg-amber-100 text-amber-700'   },
-              { role: 'User',       email: 'user@library.com',       pw: 'user123',  badgeClass: 'bg-blue-100 text-blue-700'     },
-            ].map(d => (
+        {/* Demo accounts */}
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <p className="text-xs text-gray-400 text-center mb-3">Demo accounts — click to fill</p>
+          <div className="space-y-2">
+            {DEMO_ACCOUNTS.map(d => (
               <button
                 key={d.role}
                 type="button"
                 onClick={() => fill(d.email, d.pw)}
-                className="w-full text-left text-xs p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition text-left"
               >
-                <span className={`badge ${d.badgeClass}`}>{d.role}</span>
-                <span className="text-gray-600">{d.email}</span>
-                <span className="text-gray-400 ml-auto">{d.pw}</span>
+                <div className="flex items-center gap-2.5">
+                  <span className={`badge text-[10px] ${d.badge}`}>{d.role}</span>
+                  <span className="text-xs text-gray-500">{d.email}</span>
+                </div>
+                <span className="text-[11px] font-mono text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
+                  {d.pw}
+                </span>
               </button>
             ))}
-            <p className="text-xs text-gray-400 mt-1 pl-2">Click any row to auto-fill</p>
           </div>
         </div>
       </div>
+
+      <Link to="/" className="mt-6 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        ← Back to Home
+      </Link>
     </div>
   );
 }

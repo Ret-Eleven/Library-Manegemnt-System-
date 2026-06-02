@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 
-function StatCard({ label, value, icon, color }) {
-  return (
-    <div className="card flex items-center gap-4">
+function StatCard({ label, value, icon, color, to }) {
+  const inner = (
+    <div className={`card flex items-center gap-4 ${to ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}>
       <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${color}`}>
         {icon}
       </div>
@@ -14,6 +14,7 @@ function StatCard({ label, value, icon, color }) {
       </div>
     </div>
   );
+  return to ? <Link to={to} className="block">{inner}</Link> : inner;
 }
 
 const STATUS_BADGE = {
@@ -37,14 +38,16 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [loansRes, pendingRes] = await Promise.all([
+      const [loansRes, totalRes, booksRes] = await Promise.all([
         api.get('/api/loans', { params: { status: 'pending', limit: 10 } }),
         api.get('/api/loans', { params: { limit: 1 } }),
+        api.get('/api/books', { params: { limit: 1 } }),
       ]);
       setLoans(loansRes.data.loans);
       setStats({
         pending: loansRes.data.total,
-        total:   pendingRes.data.total,
+        total:   totalRes.data.total,
+        books:   booksRes.data.total,
       });
     } finally {
       setLoading(false);
@@ -85,10 +88,10 @@ export default function AdminDashboard() {
 
       {/* Quick stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Pending Requests" value={stats?.pending ?? '—'} icon="⏳" color="bg-yellow-50" />
-        <StatCard label="Total Transactions" value={stats?.total ?? '—'} icon="📋" color="bg-blue-50" />
-        <StatCard label="Manage Books" value="→" icon="📚" color="bg-purple-50" />
-        <StatCard label="View All Loans" value="→" icon="🔍" color="bg-green-50" />
+        <StatCard label="Pending Requests"  value={stats?.pending ?? '—'} icon="⏳" color="bg-yellow-50" />
+        <StatCard label="Total Transactions" value={stats?.total   ?? '—'} icon="📋" color="bg-blue-50" />
+        <StatCard label="Books in Library"   value={stats?.books   ?? '—'} icon="📚" color="bg-purple-50" to="/admin/books" />
+        <StatCard label="All Loans"          value={stats?.total   ?? '—'} icon="🔍" color="bg-green-50"  to="/admin/loans" />
       </div>
 
       {/* Pending approvals */}
