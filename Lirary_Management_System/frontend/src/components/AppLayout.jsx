@@ -19,9 +19,7 @@ export default function AppLayout({ navItems, children }) {
     navigate('/login');
   };
 
-  const isActive = (to) =>
-    location.pathname === to ||
-    (to.length > 1 && location.pathname.startsWith(to + '/'));
+  const isActive = (to) => location.pathname === to;
 
   return (
     <div className="min-h-screen flex bg-gray-50">

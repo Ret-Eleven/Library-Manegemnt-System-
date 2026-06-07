@@ -167,7 +167,7 @@ export default function BorrowingHistory() {
           </button>
 
           {/* User icon */}
-          <Link to={`${dashboard}/profile`}
+          <Link to={dashboard}
             className="w-9 h-9 bg-white border border-gray-200 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-50 shadow-sm transition-colors">
             <IUser />
           </Link>

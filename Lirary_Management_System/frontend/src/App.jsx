@@ -2,10 +2,12 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
+import Home     from './pages/Home';
 import Login    from './pages/Login';
 import Register from './pages/Register';
 
 import UserLayout       from './pages/user/UserLayout';
+import UserHome         from './pages/user/UserHome';
 import BookCatalog      from './pages/user/BookCatalog';
 import BorrowingHistory from './pages/user/BorrowingHistory';
 
@@ -17,6 +19,9 @@ import LoanManagement   from './pages/admin/LoanManagement';
 import SuperadminLayout   from './pages/superadmin/SuperadminLayout';
 import SuperadminDashboard from './pages/superadmin/SuperadminDashboard';
 import UserManagement     from './pages/superadmin/UserManagement';
+
+import ProfilePage  from './pages/shared/ProfilePage';
+import SettingsPage from './pages/shared/SettingsPage';
 
 export default function App() {
   return (
@@ -34,8 +39,11 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index          element={<BookCatalog />} />
-          <Route path="history" element={<BorrowingHistory />} />
+          <Route index            element={<UserHome />} />
+          <Route path="catalog"  element={<BookCatalog />} />
+          <Route path="history"  element={<BorrowingHistory />} />
+          <Route path="profile"  element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Admin dashboard */}
@@ -47,9 +55,11 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index         element={<AdminDashboard />} />
-          <Route path="books"  element={<BookManagement />} />
-          <Route path="loans"  element={<LoanManagement />} />
+          <Route index            element={<AdminDashboard />} />
+          <Route path="books"    element={<BookManagement />} />
+          <Route path="loans"    element={<LoanManagement />} />
+          <Route path="profile"  element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Superadmin dashboard */}
@@ -61,11 +71,13 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index         element={<SuperadminDashboard />} />
-          <Route path="users"  element={<UserManagement />} />
+          <Route index            element={<SuperadminDashboard />} />
+          <Route path="users"    element={<UserManagement />} />
+          <Route path="profile"  element={<ProfilePage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
-        <Route path="/"   element={<Navigate to="/user" replace />} />
+        <Route path="/"   element={<Home />} />
         <Route path="*"   element={<Navigate to="/user" replace />} />
       </Routes>
     </AuthProvider>

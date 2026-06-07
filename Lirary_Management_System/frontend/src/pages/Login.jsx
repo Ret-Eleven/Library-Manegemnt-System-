@@ -4,13 +4,31 @@ import { useAuth } from '../context/AuthContext';
 
 const ROLE_HOME = { superadmin: '/superadmin', admin: '/admin', user: '/user' };
 
+const DEMO = [
+  { role: 'Superadmin', icon: '👑', email: 'superadmin@library.com', pw: 'admin123',
+    color: 'bg-purple-500/15 border-purple-500/30 hover:bg-purple-500/25', badge: 'bg-purple-500/20 text-purple-300' },
+  { role: 'Librarian',  icon: '📖', email: 'admin@library.com',      pw: 'admin123',
+    color: 'bg-amber-500/15 border-amber-500/30 hover:bg-amber-500/25',   badge: 'bg-amber-500/20 text-amber-300'   },
+  { role: 'Student',    icon: '🎓', email: 'user@library.com',        pw: 'user123',
+    color: 'bg-blue-500/15 border-blue-500/30 hover:bg-blue-500/25',       badge: 'bg-blue-500/20 text-blue-300'     },
+];
+
+const FEATURES = [
+  { icon: '📚', text: 'Access thousands of books online'     },
+  { icon: '⚡', text: 'Request and manage loans instantly'   },
+  { icon: '🔔', text: 'Get due-date reminders automatically' },
+  { icon: '📊', text: 'Track your full borrowing history'    },
+];
+
 export default function Login() {
   const { login, user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const navigate        = useNavigate();
+  const location        = useLocation();
+
+  const [form,     setForm]     = useState({ email: '', password: '' });
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+  const [showPw,   setShowPw]   = useState(false);
 
   if (user) navigate(ROLE_HOME[user.role] || '/user', { replace: true });
 
@@ -24,91 +42,234 @@ export default function Login() {
       const u = await login(form.email, form.password);
       navigate(ROLE_HOME[u.role] || '/user', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(err.response?.data?.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
     }
   };
 
-  const fill = (email, password) => setForm({ email, password });
+  const fill = (email, pw) => setForm({ email, password: pw });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <div className="text-5xl mb-3">📚</div>
-          <h1 className="text-3xl font-bold text-gray-900">LibraryMS</h1>
-          <p className="text-gray-500 mt-1 text-sm">Library Management System</p>
-        </div>
+    <div className="min-h-screen flex">
 
-        {successMsg && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-            {successMsg}
-          </div>
-        )}
+      {/* ── Left panel ─────────────────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[46%] xl:w-[42%] flex-col relative overflow-hidden"
+        style={{ background: 'linear-gradient(145deg, #0f1b4c 0%, #1e1b6e 45%, #0f172a 100%)' }}>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-            {error}
-          </div>
-        )}
+        {/* Grid texture */}
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{ backgroundImage: 'radial-gradient(circle at 1px 1px,white 1px,transparent 0)', backgroundSize: '28px 28px' }}/>
+        {/* Glow */}
+        <div className="absolute top-1/4 -left-20 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"/>
+        <div className="absolute bottom-1/4 right-0 w-64 h-64 bg-violet-600/15 rounded-full blur-3xl pointer-events-none"/>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="label">Email address</label>
-            <input
-              type="email"
-              className="input"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <label className="label">Password</label>
-            <input
-              type="password"
-              className="input"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              required
-            />
-          </div>
-          <button type="submit" className="btn-primary w-full py-2.5" disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
+        <div className="relative flex flex-col h-full px-10 py-10">
 
-        <p className="text-center mt-5 text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-blue-700 font-medium hover:underline">
-            Register
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 mb-auto">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-blue-900/50">
+              📚
+            </div>
+            <div>
+              <p className="text-white font-extrabold text-base leading-tight">LibraryMS</p>
+              <p className="text-slate-500 text-[11px]">RUPP · Central Library</p>
+            </div>
           </Link>
-        </p>
 
-        <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Demo accounts</p>
-          <div className="space-y-1">
-            {[
-              { role: 'Superadmin', email: 'superadmin@library.com', pw: 'admin123', badgeClass: 'bg-purple-100 text-purple-700' },
-              { role: 'Admin',      email: 'admin@library.com',      pw: 'admin123', badgeClass: 'bg-amber-100 text-amber-700'   },
-              { role: 'User',       email: 'user@library.com',       pw: 'user123',  badgeClass: 'bg-blue-100 text-blue-700'     },
-            ].map(d => (
-              <button
-                key={d.role}
-                type="button"
-                onClick={() => fill(d.email, d.pw)}
-                className="w-full text-left text-xs p-2 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
-              >
-                <span className={`badge ${d.badgeClass}`}>{d.role}</span>
-                <span className="text-gray-600">{d.email}</span>
-                <span className="text-gray-400 ml-auto">{d.pw}</span>
-              </button>
-            ))}
-            <p className="text-xs text-gray-400 mt-1 pl-2">Click any row to auto-fill</p>
+          {/* Main copy */}
+          <div className="my-auto">
+            <h2 className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-4">
+              Welcome back<br/>
+              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                to LibraryMS
+              </span>
+            </h2>
+            <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-xs">
+              Sign in to access your personal library dashboard, track your loans, and discover new books.
+            </p>
+
+            {/* Feature list */}
+            <ul className="space-y-3 mb-10">
+              {FEATURES.map(f => (
+                <li key={f.text} className="flex items-center gap-3">
+                  <span className="w-8 h-8 bg-white/8 rounded-lg flex items-center justify-center text-base flex-shrink-0">
+                    {f.icon}
+                  </span>
+                  <span className="text-slate-300 text-sm">{f.text}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Demo quick-fill */}
+            <div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">
+                Demo — click to auto-fill
+              </p>
+              <div className="space-y-2">
+                {DEMO.map(d => (
+                  <button
+                    key={d.role}
+                    type="button"
+                    onClick={() => fill(d.email, d.pw)}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all ${d.color}`}
+                  >
+                    <span className="text-lg">{d.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5 ${d.badge}`}>
+                        {d.role}
+                      </span>
+                      <p className="text-white/70 text-xs font-mono truncate">{d.email}</p>
+                    </div>
+                    <span className="text-white/30 text-[10px] font-mono flex-shrink-0">{d.pw}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
+
+          {/* Bottom */}
+          <p className="text-slate-600 text-xs">
+            © {new Date().getFullYear()} Royal University of Phnom Penh
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right panel: form ───────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 px-6 py-12">
+
+        {/* Mobile logo */}
+        <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-lg">📚</div>
+          <span className="text-gray-900 font-extrabold text-lg">LibraryMS</span>
+        </Link>
+
+        <div className="w-full max-w-sm">
+
+          {/* Heading */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-extrabold text-gray-900">Sign in to your account</h1>
+            <p className="text-gray-400 text-sm mt-1">
+              Don't have one?{' '}
+              <Link to="/register" className="text-blue-600 font-semibold hover:text-blue-500 transition-colors">
+                Create account
+              </Link>
+            </p>
+          </div>
+
+          {/* Success message */}
+          {successMsg && (
+            <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-sm">
+              <span className="mt-0.5 flex-shrink-0">✓</span>
+              {successMsg}
+            </div>
+          )}
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+              <span className="mt-0.5 flex-shrink-0">✕</span>
+              {error}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Email */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Email address
+              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={form.email}
+                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                required
+                className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-900
+                  placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                  transition-all shadow-sm"
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  required
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 pr-11 text-sm text-gray-900
+                    placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                    transition-all shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  tabIndex={-1}
+                >
+                  {showPw
+                    ? <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg>
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path strokeLinecap="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
+                  }
+                </button>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-60
+                text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-200 text-sm
+                flex items-center justify-center gap-2 mt-2"
+            >
+              {loading ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
+                  Signing in…
+                </>
+              ) : 'Sign In'}
+            </button>
+          </form>
+
+          {/* Mobile demo accounts */}
+          <div className="mt-8 lg:hidden">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center mb-3">
+              Demo accounts — click to fill
+            </p>
+            <div className="space-y-2">
+              {DEMO.map(d => (
+                <button
+                  key={d.role}
+                  type="button"
+                  onClick={() => fill(d.email, d.pw)}
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-left transition-all"
+                >
+                  <span>{d.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-gray-700">{d.role}</p>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">{d.email}</p>
+                  </div>
+                  <span className="text-gray-400 text-[10px] font-mono">{d.pw}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Back to home */}
+          <p className="text-center mt-8 text-xs text-gray-400">
+            <Link to="/" className="hover:text-gray-600 transition-colors">← Back to home</Link>
+          </p>
         </div>
       </div>
     </div>
