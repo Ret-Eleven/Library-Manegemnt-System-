@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Home     from './pages/Home';
@@ -26,6 +27,7 @@ import SettingsPage from './pages/shared/SettingsPage';
 export default function App() {
   return (
     <AuthProvider>
+      <NotificationProvider>
       <Routes>
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -80,6 +82,7 @@ export default function App() {
         <Route path="/"   element={<Home />} />
         <Route path="*"   element={<Navigate to="/user" replace />} />
       </Routes>
+      </NotificationProvider>
     </AuthProvider>
   );
 }
