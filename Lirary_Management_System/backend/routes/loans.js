@@ -48,6 +48,18 @@ router.post('/request', authenticate, async (req, res) => {
   } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
 });
 
+// User: cancel own pending request
+router.post('/:id/cancel', authenticate, async (req, res) => {
+  try {
+    const { data: loan } = await supabase.from('transactions').select('*').eq('id', req.params.id).single();
+    if (!loan) return res.status(404).json({ message: 'Loan not found' });
+    if (loan.user_id !== req.user.id) return res.status(403).json({ message: 'Not your request' });
+    if (loan.status !== 'pending') return res.status(400).json({ message: 'Only pending requests can be cancelled' });
+    await supabase.from('transactions').update({ status: 'rejected' }).eq('id', req.params.id);
+    res.json({ message: 'Request cancelled' });
+  } catch (err) { console.error(err); res.status(500).json({ message: 'Server error' }); }
+});
+
 // Admin: list all loans
 router.get('/', authenticate, requireMinRole('admin'), async (req, res) => {
   try {

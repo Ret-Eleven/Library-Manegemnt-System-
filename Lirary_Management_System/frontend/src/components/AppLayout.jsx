@@ -157,7 +157,7 @@ export default function AppLayout({ navItems, children }) {
     user?.role === 'admin'      ? '/admin'       : '/user';
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="h-screen overflow-hidden flex bg-gray-50">
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -187,7 +187,7 @@ export default function AppLayout({ navItems, children }) {
         </div>
 
         {/* Primary nav */}
-        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto scrollbar-sidebar">
           {navItems.map(item => (
             <Link
               key={item.to}
@@ -237,10 +237,10 @@ export default function AppLayout({ navItems, children }) {
       </aside>
 
       {/* ── Main content ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto scrollbar-main">
 
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center gap-3 sticky top-0 z-30">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center gap-3 sticky top-0 z-30 flex-shrink-0">
 
           {/* Hamburger */}
           <button className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
@@ -282,7 +282,7 @@ export default function AppLayout({ navItems, children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+        <main className="flex-1 p-4 sm:p-6">
           {children}
         </main>
       </div>
