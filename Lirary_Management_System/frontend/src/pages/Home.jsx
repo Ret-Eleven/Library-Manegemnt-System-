@@ -33,11 +33,6 @@ const HOW_IT_WORKS = [
   { step: '04', title: 'Pick Up & Return', desc: 'Collect from the library desk and return before your due date.' },
 ];
 
-const DEMO_ACCOUNTS = [
-  { role: 'Superadmin', icon: '👑', email: 'superadmin@library.com', pw: 'admin123', from: 'from-purple-600', to: 'to-violet-600', badge: 'bg-purple-500/20 text-purple-200' },
-  { role: 'Librarian',  icon: '📖', email: 'admin@library.com',      pw: 'admin123', from: 'from-amber-500',  to: 'to-orange-500', badge: 'bg-amber-500/20 text-amber-200'   },
-  { role: 'Student',    icon: '🎓', email: 'user@library.com',        pw: 'user123',  from: 'from-blue-600',   to: 'to-cyan-500',   badge: 'bg-blue-500/20 text-blue-200'     },
-];
 
 /* ── Book cover component ─────────────────────────────────────── */
 function Cover({ src, title }) {
@@ -321,52 +316,6 @@ function PublicHome() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ━━━━━━━━━━━━━━ DEMO ACCOUNTS ━━━━━━━━━━━━━━ */}
-      <section className="py-20"
-        style={{ background: 'linear-gradient(135deg, #0f1b4c 0%, #1e1b6e 50%, #0f172a 100%)' }}>
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <span className="text-blue-400 text-sm font-bold uppercase tracking-widest">Demo</span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-2 mb-2">Try it now</h2>
-          <p className="text-slate-400 mb-10">Log in instantly with a demo account — no sign-up required.</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {DEMO_ACCOUNTS.map(d => (
-              <Link key={d.role} to="/login"
-                className={`relative overflow-hidden bg-gradient-to-br ${d.from} ${d.to} rounded-2xl p-5 text-left
-                  hover:-translate-y-1 hover:shadow-2xl transition-all duration-200 group`}>
-                <div className="absolute inset-0 opacity-10"
-                  style={{ backgroundImage: 'radial-gradient(circle at 1px 1px,white 1px,transparent 0)', backgroundSize: '20px 20px' }}/>
-                <div className="relative">
-                  <div className="text-3xl mb-3">{d.icon}</div>
-                  <p className="text-white font-extrabold text-lg mb-3">{d.role}</p>
-                  <div className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-3 ${d.badge}`}>
-                    Demo Account
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-white/70 text-xs font-mono">{d.email}</p>
-                    <p className="text-white/50 text-xs font-mono">Password: {d.pw}</p>
-                  </div>
-                  <div className="mt-4 flex items-center gap-1 text-white/80 text-xs font-bold
-                    group-hover:text-white transition-colors">
-                    Sign in as {d.role}
-                    <svg className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <p className="text-slate-500 text-sm">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-              Register for free →
-            </Link>
-          </p>
         </div>
       </section>
 

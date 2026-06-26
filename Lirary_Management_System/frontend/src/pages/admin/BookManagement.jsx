@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
 
-const EMPTY = { title: '', author: '', isbn: '', category: '', total_copies: 1, published_year: '', description: '' };
+const EMPTY = { title: '', author: '', isbn: '', category: '', total_copies: 1, published_year: '', description: '', cover_url: '' };
 
 const CATEGORIES = ['Fiction', 'Non-Fiction', 'Science', 'Technology', 'History', 'Biography', 'Art', 'Philosophy', 'Religion', 'Law', 'Medicine', 'Other'];
 
@@ -14,9 +14,24 @@ const GRADIENTS = [
 ];
 const gradient = (id) => GRADIENTS[id % GRADIENTS.length];
 
-function BookCover({ id, title, size = 'md' }) {
+function BookCover({ id, title, isbn, cover_url, size = 'md' }) {
+  const [olFailed, setOlFailed] = useState(false);
   const initials = title?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
   const cls = size === 'sm' ? 'w-9 h-12 text-xs' : 'w-11 h-14 text-sm';
+
+  if (cover_url) {
+    return <img src={cover_url} alt={title} className={`${cls} rounded-lg object-cover flex-shrink-0 shadow-sm`} />;
+  }
+  if (isbn && !olFailed) {
+    return (
+      <img
+        src={`https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`}
+        alt={title}
+        onError={() => setOlFailed(true)}
+        className={`${cls} rounded-lg object-cover flex-shrink-0 shadow-sm`}
+      />
+    );
+  }
   return (
     <div className={`${cls} bg-gradient-to-br ${gradient(id)} rounded-lg flex items-center justify-center
       text-white font-extrabold flex-shrink-0 shadow-sm`}>
@@ -57,8 +72,37 @@ const inputCls = `w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-
   placeholder-gray-400 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all`;
 
 /* ── Add / Edit modal ────────────────────────────────────────── */
-function BookModal({ mode, form, onChange, onSave, onClose, saving }) {
-  const f = (k) => (e) => onChange(k, e.target.value);
+function BookModal({ mode, form, onChange, onSave, onClose, saving, imgError, setImgError }) {
+  const f        = (k) => (e) => onChange(k, e.target.value);
+  const fileRef  = useRef(null);
+
+  const [olFailed, setOlFailed] = useState(false);
+
+  useEffect(() => { setOlFailed(false); }, [form.isbn]);
+
+  const handleUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { setImgError('Image must be under 2 MB'); return; }
+    setImgError('');
+    const reader = new FileReader();
+    reader.onload = () => onChange('cover_url', reader.result);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const removeCover = () => { onChange('cover_url', ''); setOlFailed(false); };
+
+  /* What to show in the preview */
+  const previewSrc = form.cover_url
+    ? form.cover_url
+    : (form.isbn && !olFailed)
+      ? `https://covers.openlibrary.org/b/isbn/${form.isbn.replace(/[-\s]/g, '')}-M.jpg`
+      : null;
+
+  const isCustom = !!form.cover_url;
+  const initials = form.title?.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '??';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={onClose}>
@@ -83,6 +127,110 @@ function BookModal({ mode, form, onChange, onSave, onClose, saving }) {
         </div>
 
         <form onSubmit={onSave} className="p-6 space-y-5">
+
+          {/* ── Cover upload zone ── */}
+          <div className="flex items-start gap-5 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+
+            {/* Clickable cover */}
+            <div className="flex flex-col items-center gap-2 flex-shrink-0">
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  className="w-20 h-28 rounded-xl overflow-hidden shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 block"
+                  title="Upload cover image"
+                >
+                  {previewSrc ? (
+                    <img
+                      src={previewSrc}
+                      alt="Cover"
+                      onError={() => { if (!isCustom) setOlFailed(true); }}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-full h-full flex items-center justify-center font-extrabold text-lg text-white
+                      ${form.title ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-slate-300 to-slate-400'}`}>
+                      {form.title ? initials : <span className="text-2xl opacity-50">📖</span>}
+                    </div>
+                  )}
+                  {/* hover overlay */}
+                  <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center
+                    opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/>
+                      <path strokeLinecap="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
+                    </svg>
+                    <span className="text-white text-[11px] font-bold mt-1">Upload</span>
+                  </div>
+                </button>
+
+                {/* Remove button — only when custom image is set */}
+                {isCustom && (
+                  <button
+                    type="button"
+                    onClick={removeCover}
+                    title="Remove custom image"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full
+                      flex items-center justify-center text-[10px] font-bold shadow transition-colors z-10"
+                  >✕</button>
+                )}
+              </div>
+
+              {/* Status label */}
+              <p className="text-[10px] text-gray-400 text-center leading-snug max-w-[80px]">
+                {isCustom
+                  ? 'Custom image'
+                  : (form.isbn && !olFailed)
+                    ? 'Open Library'
+                    : 'Click to upload'}
+              </p>
+
+              {imgError && (
+                <p className="text-[10px] text-red-500 font-semibold text-center max-w-[80px]">{imgError}</p>
+              )}
+            </div>
+
+            {/* Live text preview */}
+            <div className="flex-1 min-w-0 pt-1">
+              <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug">
+                {form.title || <span className="text-gray-300 font-normal italic">Book title…</span>}
+              </p>
+              <p className="text-xs text-gray-400 mt-1 truncate">
+                {form.author || <span className="text-gray-300 italic">Author…</span>}
+              </p>
+              {form.isbn && <p className="text-[11px] text-gray-400 font-mono mt-1 truncate">{form.isbn}</p>}
+              {form.category && (
+                <span className="inline-block mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  {form.category}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/>
+                </svg>
+                {isCustom ? 'Replace image' : 'Upload cover image'}
+              </button>
+              {isCustom && (
+                <button
+                  type="button"
+                  onClick={removeCover}
+                  className="mt-1 flex items-center gap-1.5 text-[11px] font-bold text-red-400 hover:text-red-500 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" d="M6 18 18 6M6 6l12 12"/>
+                  </svg>
+                  Remove image
+                </button>
+              )}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Title *" span2>
               <input className={inputCls} value={form.title} onChange={f('title')} placeholder="Book title" required />
@@ -174,6 +322,7 @@ export default function BookManagement() {
   const [form,     setForm]     = useState(EMPTY);
   const [saving,   setSaving]   = useState(false);
   const [toast,    setToast]    = useState(null);
+  const [imgError, setImgError] = useState('');
 
   const LIMIT = 15;
 
@@ -199,11 +348,12 @@ export default function BookManagement() {
 
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
 
-  const openAdd = () => { setForm(EMPTY); setSelected(null); setModal('add'); };
+  const openAdd = () => { setForm(EMPTY); setSelected(null); setImgError(''); setModal('add'); };
   const openEdit = (b) => {
     setForm({ title: b.title, author: b.author, isbn: b.isbn || '', category: b.category || '',
-      total_copies: b.total_copies, published_year: b.published_year || '', description: b.description || '' });
-    setSelected(b); setModal('edit');
+      total_copies: b.total_copies, published_year: b.published_year || '', description: b.description || '',
+      cover_url: b.cover_url || '' });
+    setSelected(b); setImgError(''); setModal('edit');
   };
   const openDelete = (b) => { setSelected(b); setModal('delete'); };
   const closeModal = () => { setModal(null); setSelected(null); };
@@ -261,7 +411,8 @@ export default function BookManagement() {
 
       {/* ── Modals ── */}
       {(modal === 'add' || modal === 'edit') && (
-        <BookModal mode={modal} form={form} onChange={onChange} onSave={handleSave} onClose={closeModal} saving={saving} />
+        <BookModal mode={modal} form={form} onChange={onChange} onSave={handleSave} onClose={closeModal} saving={saving}
+          imgError={imgError} setImgError={setImgError} />
       )}
       {modal === 'delete' && selected && (
         <DeleteModal book={selected} onConfirm={handleDelete} onClose={closeModal} saving={saving} />
@@ -372,7 +523,7 @@ export default function BookManagement() {
 
                   {/* Book info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <BookCover id={book.id} title={book.title} />
+                    <BookCover id={book.id} title={book.title} isbn={book.isbn} cover_url={book.cover_url} />
                     <div className="min-w-0">
                       <p className="font-bold text-gray-900 text-sm truncate">{book.title}</p>
                       <p className="text-xs text-gray-400 truncate">{book.author}</p>

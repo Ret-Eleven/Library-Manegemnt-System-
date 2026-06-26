@@ -28,8 +28,24 @@ const COVER_COLORS = [
 ];
 const coverColor = (id) => COVER_COLORS[id % COVER_COLORS.length];
 
-function BookCover({ loanId, title }) {
+function BookCover({ loanId, title, isbn }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const initials = title ? title.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '??';
+  const coverUrl = isbn && !imgFailed
+    ? `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`
+    : null;
+
+  if (coverUrl) {
+    return (
+      <img
+        src={coverUrl}
+        alt={title || 'Book cover'}
+        onError={() => setImgFailed(true)}
+        className="w-12 h-16 rounded-lg object-cover flex-shrink-0 shadow-sm"
+      />
+    );
+  }
+
   return (
     <div className={`w-12 h-16 rounded-lg bg-gradient-to-br ${coverColor(loanId)}
       flex items-center justify-center text-white text-sm font-extrabold flex-shrink-0 shadow-sm`}>
@@ -86,7 +102,7 @@ function LoanModal({ loan, onClose, onCancel }) {
 
         {/* Header */}
         <div className="flex items-start gap-4 p-6 border-b border-gray-100">
-          <BookCover loanId={loan.id} title={loan.title} />
+          <BookCover loanId={loan.id} title={loan.title} isbn={loan.isbn} />
           <div className="flex-1 min-w-0">
             <p className="font-extrabold text-gray-900 text-lg leading-snug">{loan.title}</p>
             <p className="text-sm text-gray-500 mt-0.5">{loan.author || 'Unknown Author'}</p>
@@ -252,7 +268,7 @@ function LoanCard({ loan, onSelect, onCancel }) {
           status === 'active'  ? 'border-emerald-100' :
           status === 'pending' ? 'border-amber-100' : 'border-gray-100'}`}
     >
-      <BookCover loanId={loan.id} title={loan.title} />
+      <BookCover loanId={loan.id} title={loan.title} isbn={loan.isbn} />
 
       {/* Info */}
       <div className="flex-1 min-w-0">

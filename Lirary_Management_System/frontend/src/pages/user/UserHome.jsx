@@ -199,7 +199,7 @@ export default function UserHome() {
                   <div key={loan.id}
                     className={`flex items-center gap-3 p-3 rounded-xl border transition-colors
                       ${ov ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
-                    <Cover url={null} title={loan.title} />
+                    <Cover url={loan.isbn ? `https://covers.openlibrary.org/b/isbn/${loan.isbn}-M.jpg` : null} title={loan.title} />
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 text-sm truncate">{loan.title}</p>
                       <p className="text-xs text-gray-400 truncate mt-0.5">{loan.author}</p>

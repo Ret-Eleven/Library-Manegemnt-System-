@@ -329,7 +329,7 @@ function StudentForm({ onBack, onSuccess, onError, loading, setLoading }) {
 
 /* ── Step 2b: Public / Staff form ────────────────────────────── */
 function PublicForm({ onBack, onSuccess, onError, loading, setLoading }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', nationalId: '', address: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ name: '', email: '', phone: '', nationalId: '', idExpiry: '', address: '', password: '', confirm: '' });
   const [errors, setErrors] = useState({});
   const [showPw, setShowPw] = useState(false);
 
@@ -341,6 +341,8 @@ function PublicForm({ onBack, onSuccess, onError, loading, setLoading }) {
     if (!form.email)            errs.email     = 'Email is required';
     if (!form.phone.trim())     errs.phone     = 'Phone number is required';
     if (!form.nationalId.trim()) errs.nationalId = 'National ID or Passport is required';
+    if (!form.idExpiry)         errs.idExpiry  = 'Expiry date is required';
+    else if (new Date(form.idExpiry) <= new Date()) errs.idExpiry = 'ID must not be expired';
     if (!form.address.trim())   errs.address   = 'Home address is required';
     if (form.password.length < 6) errs.password = 'Password must be at least 6 characters';
     if (form.password !== form.confirm) errs.confirm = 'Passwords do not match';
@@ -400,15 +402,22 @@ function PublicForm({ onBack, onSuccess, onError, loading, setLoading }) {
           className={inputCls(errors.email)} required />
       </Field>
 
-      {/* Phone + National ID (side by side) */}
+      {/* Phone */}
+      <Field label="Phone Number" error={errors.phone}>
+        <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+855 12 345 678"
+          className={inputCls(errors.phone)} required />
+      </Field>
+
+      {/* National ID + Expiry (side by side) */}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Phone Number" error={errors.phone}>
-          <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+855 12 345 678"
-            className={inputCls(errors.phone)} required />
-        </Field>
         <Field label="National ID / Passport" error={errors.nationalId}>
           <input type="text" value={form.nationalId} onChange={set('nationalId')} placeholder="ID or Passport No."
             className={inputCls(errors.nationalId)} required />
+        </Field>
+        <Field label="ID / Passport Expiry" error={errors.idExpiry}>
+          <input type="date" value={form.idExpiry} onChange={set('idExpiry')}
+            min={new Date().toISOString().split('T')[0]}
+            className={inputCls(errors.idExpiry)} required />
         </Field>
       </div>
 
@@ -580,7 +589,7 @@ export default function Register() {
     <div className="min-h-screen flex">
 
       {/* ── Left branding panel ─────────────────────────────── */}
-      <div className="hidden lg:flex w-[38%] xl:w-[36%] flex-col relative overflow-hidden"
+      <div className="hidden lg:flex w-[38%] xl:w-[36%] flex-col relative overflow-hidden sticky top-0 h-screen"
         style={{ background: 'linear-gradient(145deg, #0f1b4c 0%, #1e1b6e 50%, #0f172a 100%)' }}>
         <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
           style={{ backgroundImage: 'radial-gradient(circle at 1px 1px,white 1px,transparent 0)', backgroundSize: '28px 28px' }}/>

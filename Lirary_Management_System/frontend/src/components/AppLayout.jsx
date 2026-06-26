@@ -271,8 +271,10 @@ export default function AppLayout({ navItems, children }) {
               className="flex items-center gap-2 pl-2 ml-1 border-l border-gray-200 hover:opacity-80 transition-opacity"
               title="My Profile"
             >
-              <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm">
-                {user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              <div className="w-8 h-8 rounded-xl overflow-hidden bg-blue-600 flex items-center justify-center text-white text-xs font-extrabold shadow-sm flex-shrink-0">
+                {user?.avatar
+                  ? <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                  : user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
               </div>
               <div className="hidden sm:block text-right">
                 <p className="text-xs font-semibold text-gray-800 leading-tight truncate max-w-[100px]">{user?.name?.split(' ')[0]}</p>

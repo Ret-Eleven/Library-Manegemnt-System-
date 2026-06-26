@@ -4,15 +4,6 @@ import { useAuth } from '../context/AuthContext';
 
 const ROLE_HOME = { superadmin: '/superadmin', admin: '/admin', user: '/user' };
 
-const DEMO = [
-  { role: 'Superadmin', icon: '👑', email: 'superadmin@library.com', pw: 'admin123',
-    color: 'bg-purple-500/15 border-purple-500/30 hover:bg-purple-500/25', badge: 'bg-purple-500/20 text-purple-300' },
-  { role: 'Librarian',  icon: '📖', email: 'admin@library.com',      pw: 'admin123',
-    color: 'bg-amber-500/15 border-amber-500/30 hover:bg-amber-500/25',   badge: 'bg-amber-500/20 text-amber-300'   },
-  { role: 'Student',    icon: '🎓', email: 'user@library.com',        pw: 'user123',
-    color: 'bg-blue-500/15 border-blue-500/30 hover:bg-blue-500/25',       badge: 'bg-blue-500/20 text-blue-300'     },
-];
-
 const FEATURES = [
   { icon: '📚', text: 'Access thousands of books online'     },
   { icon: '⚡', text: 'Request and manage loans instantly'   },
@@ -47,8 +38,6 @@ export default function Login() {
       setLoading(false);
     }
   };
-
-  const fill = (email, pw) => setForm({ email, password: pw });
 
   return (
     <div className="min-h-screen flex">
@@ -101,31 +90,6 @@ export default function Login() {
               ))}
             </ul>
 
-            {/* Demo quick-fill */}
-            <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">
-                Demo — click to auto-fill
-              </p>
-              <div className="space-y-2">
-                {DEMO.map(d => (
-                  <button
-                    key={d.role}
-                    type="button"
-                    onClick={() => fill(d.email, d.pw)}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all ${d.color}`}
-                  >
-                    <span className="text-lg">{d.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-0.5 ${d.badge}`}>
-                        {d.role}
-                      </span>
-                      <p className="text-white/70 text-xs font-mono truncate">{d.email}</p>
-                    </div>
-                    <span className="text-white/30 text-[10px] font-mono flex-shrink-0">{d.pw}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Bottom */}
@@ -241,30 +205,6 @@ export default function Login() {
               ) : 'Sign In'}
             </button>
           </form>
-
-          {/* Mobile demo accounts */}
-          <div className="mt-8 lg:hidden">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest text-center mb-3">
-              Demo accounts — click to fill
-            </p>
-            <div className="space-y-2">
-              {DEMO.map(d => (
-                <button
-                  key={d.role}
-                  type="button"
-                  onClick={() => fill(d.email, d.pw)}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 text-left transition-all"
-                >
-                  <span>{d.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-700">{d.role}</p>
-                    <p className="text-[11px] text-gray-400 font-mono truncate">{d.email}</p>
-                  </div>
-                  <span className="text-gray-400 text-[10px] font-mono">{d.pw}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Back to home */}
           <p className="text-center mt-8 text-xs text-gray-400">

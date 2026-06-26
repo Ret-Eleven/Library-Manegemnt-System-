@@ -30,14 +30,33 @@ function StatCard({ icon, value, label, sub, gradient, loading }) {
   );
 }
 
+/* ── Book cover ──────────────────────────────────────────────── */
+function BookCover({ isbn, title }) {
+  const [failed, setFailed] = useState(false);
+  const initials = title ? title.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() : '??';
+  if (isbn && !failed) {
+    return (
+      <img
+        src={`https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`}
+        alt={title}
+        onError={() => setFailed(true)}
+        className="w-10 h-14 rounded-lg object-cover flex-shrink-0 shadow-sm"
+      />
+    );
+  }
+  return (
+    <div className="w-10 h-14 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[11px] font-extrabold flex-shrink-0 shadow-sm">
+      {initials}
+    </div>
+  );
+}
+
 /* ── Pending request card ────────────────────────────────────── */
 function RequestCard({ loan, onIssue, onReject, busy }) {
   return (
     <div className="flex items-center gap-3 p-3.5 bg-gray-50 hover:bg-gray-100/70 rounded-xl transition-colors group">
-      {/* Avatar */}
-      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0 shadow-sm">
-        {loan.user_name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?'}
-      </div>
+      {/* Book cover */}
+      <BookCover isbn={loan.isbn} title={loan.title} />
 
       {/* Info */}
       <div className="flex-1 min-w-0">

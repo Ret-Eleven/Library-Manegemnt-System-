@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 
@@ -32,8 +32,21 @@ export default function ProfilePage() {
   const [editEmail, setEditEmail] = useState('');
   const [saving,    setSaving]    = useState(false);
 
-  const [pw,      setPw]      = useState({ current: '', newPw: '', confirm: '' });
-  const [pwSaving, setPwSaving] = useState(false);
+  const [pw,        setPw]      = useState({ current: '', newPw: '', confirm: '' });
+  const [pwSaving,  setPwSaving] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Image must be under 2 MB', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      updateUser({ avatar: reader.result });
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -111,10 +124,55 @@ export default function ProfilePage() {
 
       {/* Profile card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex items-center gap-5">
-        <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center
-          text-white text-2xl font-extrabold flex-shrink-0 shadow-lg">
-          {user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+
+        {/* Avatar */}
+        <div className="relative flex-shrink-0 group">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="relative w-20 h-20 rounded-2xl overflow-hidden shadow-lg focus:outline-none"
+            title="Change profile photo"
+          >
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center
+                text-white text-2xl font-extrabold">
+                {user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center
+              opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/>
+                <path strokeLinecap="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
+              </svg>
+              <span className="text-white text-[10px] font-bold mt-1">Edit</span>
+            </div>
+          </button>
+
+          {/* Remove button — only shown when there's a custom avatar */}
+          {user?.avatar && (
+            <button
+              type="button"
+              onClick={() => updateUser({ avatar: null })}
+              title="Remove photo"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full
+                flex items-center justify-center shadow transition-colors text-[10px] font-bold"
+            >
+              ✕
+            </button>
+          )}
         </div>
+
         <div>
           <h2 className="text-xl font-extrabold text-gray-900">{profile?.name || user?.name}</h2>
           <p className="text-sm text-gray-400 mt-0.5">{profile?.email || user?.email}</p>
