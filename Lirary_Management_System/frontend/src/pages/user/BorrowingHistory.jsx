@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { Library, BookOpen, AlertTriangle, CheckCircle, Clock, ClipboardList, Inbox, DollarSign, X, Check, Sparkles } from 'lucide-react';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 const fmt = (d) =>
@@ -58,7 +59,7 @@ function BookCover({ loanId, title, isbn }) {
 function StatCard({ icon, value, label, sub, color = 'bg-blue-50 text-blue-600' }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-3 min-w-0 flex-1">
-      <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center text-lg flex-shrink-0`}>
+      <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center flex-shrink-0`}>
         {icon}
       </div>
       <div className="min-w-0">
@@ -76,6 +77,10 @@ function LoanModal({ loan, onClose, onCancel }) {
   const status = getStatus(loan);
   const cfg    = STATUS_CFG[status];
   const days   = daysUntil(loan.due_date);
+  const daysSinceApproval = loan.borrow_date
+    ? Math.floor((new Date() - new Date(loan.borrow_date)) / 86400000)
+    : null;
+  const isReadyToCollect = loan.status === 'active' && daysSinceApproval !== null && daysSinceApproval <= 3;
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -85,9 +90,9 @@ function LoanModal({ loan, onClose, onCancel }) {
   };
 
   const steps = [
-    { key: 'pending',  label: 'Requested',   date: loan.created_at, icon: '📋' },
-    { key: 'active',   label: 'Issued',       date: loan.borrow_date, icon: '📖' },
-    { key: 'returned', label: 'Returned',     date: loan.return_date, icon: '✅' },
+    { key: 'pending',  label: 'Requested',   date: loan.created_at,  icon: <ClipboardList className="w-4 h-4" /> },
+    { key: 'active',   label: 'Issued',       date: loan.borrow_date, icon: <BookOpen className="w-4 h-4" /> },
+    { key: 'returned', label: 'Returned',     date: loan.return_date, icon: <CheckCircle className="w-4 h-4" /> },
   ];
   const statusOrder = ['pending', 'active', 'returned'];
   const currentIdx  = loan.status === 'rejected'
@@ -122,13 +127,15 @@ function LoanModal({ loan, onClose, onCancel }) {
           </span>
           <span className="text-xs text-gray-400 font-mono">Loan #{loan.id}</span>
           {status === 'active' && days !== null && days >= 0 && days <= 3 && (
-            <span className="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-full">
-              ⏰ Due {days === 0 ? 'today' : `in ${days} day${days > 1 ? 's' : ''}`}
+            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1.5 rounded-full">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              Due {days === 0 ? 'today' : `in ${days} day${days > 1 ? 's' : ''}`}
             </span>
           )}
           {status === 'overdue' && (
-            <span className="text-xs bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-full">
-              ⚠️ {Math.abs(days || 0)} day{Math.abs(days || 0) !== 1 ? 's' : ''} overdue
+            <span className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-600 font-bold px-3 py-1.5 rounded-full">
+              <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+              {Math.abs(days || 0)} day{Math.abs(days || 0) !== 1 ? 's' : ''} overdue
             </span>
           )}
         </div>
@@ -138,7 +145,7 @@ function LoanModal({ loan, onClose, onCancel }) {
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Timeline</p>
           {loan.status === 'rejected' ? (
             <div className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-              <span className="text-xl">❌</span>
+              <X className="w-5 h-5 text-gray-400" />
               <div>
                 <p className="text-sm font-bold text-gray-600">Request Cancelled</p>
                 <p className="text-xs text-gray-400">{fmt(loan.created_at)}</p>
@@ -157,7 +164,7 @@ function LoanModal({ loan, onClose, onCancel }) {
                         ${done
                           ? current ? 'border-blue-500 bg-blue-500 text-white' : 'border-emerald-500 bg-emerald-500 text-white'
                           : 'border-gray-200 bg-white text-gray-300'}`}>
-                        {done ? (current ? step.icon : '✓') : step.icon}
+                        {done ? (current ? step.icon : <Check className="w-3 h-3" />) : step.icon}
                       </div>
                       {!last && (
                         <div className={`flex-1 h-0.5 mx-1 ${i < currentIdx ? 'bg-emerald-400' : 'bg-gray-200'}`}/>
@@ -206,9 +213,9 @@ function LoanModal({ loan, onClose, onCancel }) {
                   ${(loan.current_fine || loan.fine_amount || 0).toFixed(2)}
                 </p>
               </div>
-              <span className={`text-2xl ${loan.fine_paid ? '✅' : '⚠️'}`}>
-                {loan.fine_paid ? '✅' : '⚠️'}
-              </span>
+              {loan.fine_paid
+                ? <CheckCircle className="w-6 h-6 text-gray-400" />
+                : <AlertTriangle className="w-6 h-6 text-red-500" />}
             </div>
             {!loan.fine_paid && (
               <p className="text-xs text-red-500 mt-2">
@@ -229,7 +236,22 @@ function LoanModal({ loan, onClose, onCancel }) {
               {cancelling ? 'Cancelling…' : 'Cancel Request'}
             </button>
           )}
-          {loan.status === 'active' && (
+          {loan.status === 'active' && isReadyToCollect && (
+            <div className="flex-1 bg-green-50 border border-green-300 rounded-xl py-3 px-4 text-center">
+              <p className="text-xs font-bold text-green-800 mb-2">📦 Book approved! Collect at the library desk.</p>
+              {loan.pickup_code && (
+                <div className="bg-white border-2 border-green-400 rounded-xl py-2 px-4 inline-block">
+                  <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Your Pickup Code</p>
+                  <p className="text-3xl font-extrabold text-green-900 font-mono tracking-[0.3em] mt-0.5">{loan.pickup_code}</p>
+                  <p className="text-[10px] text-green-600 mt-1">Show this code at the desk · Due: {loan.due_date}</p>
+                </div>
+              )}
+              {!loan.pickup_code && (
+                <p className="text-xs text-green-600">Bring your student ID · Due: {loan.due_date}</p>
+              )}
+            </div>
+          )}
+          {loan.status === 'active' && !isReadyToCollect && (
             <div className="flex-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold
               py-3 px-4 rounded-xl text-center leading-relaxed">
               To return this book, visit the library desk with your student ID.
@@ -246,7 +268,7 @@ function LoanModal({ loan, onClose, onCancel }) {
 }
 
 /* ── Loan card ───────────────────────────────────────────────── */
-function LoanCard({ loan, onSelect, onCancel }) {
+function LoanCard({ loan, onSelect, onCancel, isReadyToCollect }) {
   const [cancelling, setCancelling] = useState(false);
   const status = getStatus(loan);
   const cfg    = STATUS_CFG[status];
@@ -264,7 +286,8 @@ function LoanCard({ loan, onSelect, onCancel }) {
       onClick={() => onSelect(loan)}
       className={`bg-white rounded-2xl border shadow-sm p-4 flex items-center gap-4
         hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer
-        ${status === 'overdue' ? 'border-red-200' :
+        ${isReadyToCollect ? 'border-green-300 ring-1 ring-green-200' :
+          status === 'overdue' ? 'border-red-200' :
           status === 'active'  ? 'border-emerald-100' :
           status === 'pending' ? 'border-amber-100' : 'border-gray-100'}`}
     >
@@ -286,8 +309,8 @@ function LoanCard({ loan, onSelect, onCancel }) {
             <span className={`text-[11px] font-semibold
               ${status === 'overdue' ? 'text-red-500' :
                 days !== null && days <= 3 ? 'text-amber-600' : 'text-gray-400'}`}>
-              {status === 'overdue' ? `⚠️ ${Math.abs(days || 0)}d overdue` :
-               days !== null && days <= 3 ? `⏰ due in ${days}d` : `Due: ${fmt(loan.due_date)}`}
+              {status === 'overdue' ? `${Math.abs(days || 0)}d overdue` :
+               days !== null && days <= 3 ? `due in ${days}d` : `Due: ${fmt(loan.due_date)}`}
             </span>
           )}
           {loan.return_date && (
@@ -307,6 +330,18 @@ function LoanCard({ loan, onSelect, onCancel }) {
           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}/>
           {cfg.label}
         </span>
+
+        {isReadyToCollect && loan.pickup_code && (
+          <div className="text-center bg-green-50 border border-green-300 rounded-lg px-2 py-1">
+            <p className="text-[9px] font-bold text-green-600 uppercase tracking-widest">Code</p>
+            <p className="text-sm font-extrabold text-green-900 font-mono tracking-widest leading-none">{loan.pickup_code}</p>
+          </div>
+        )}
+        {isReadyToCollect && !loan.pickup_code && (
+          <span className="text-[11px] font-bold text-green-700 bg-green-50 border border-green-300 px-2 py-0.5 rounded-full animate-pulse">
+            Collect Now
+          </span>
+        )}
 
         {(loan.current_fine > 0) && !loan.fine_paid && (
           <span className="text-[11px] font-bold text-red-500 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
@@ -378,6 +413,12 @@ export default function BorrowingHistory() {
   const totalFine = loans.reduce((s, l) => s + (l.current_fine || l.fine_amount || 0), 0);
   const unpaidFine = loans.filter(l => !l.fine_paid).reduce((s, l) => s + (l.current_fine || l.fine_amount || 0), 0);
 
+  const today = new Date();
+  const readyToCollect = loans.filter(l =>
+    l.status === 'active' && l.borrow_date &&
+    Math.floor((today - new Date(l.borrow_date)) / 86400000) <= 3
+  );
+
   /* ── Filter + sort ── */
   const filtered = loans
     .filter(l => {
@@ -402,11 +443,11 @@ export default function BorrowingHistory() {
     });
 
   const FILTERS = [
-    { key: 'all',      label: 'All',        count: total    },
-    { key: 'active',   label: '📖 Active',  count: active   },
-    { key: 'overdue',  label: '⚠️ Overdue', count: overdue  },
-    { key: 'pending',  label: '⏳ Pending', count: pending  },
-    { key: 'returned', label: '✅ Returned', count: returned },
+    { key: 'all',      label: 'All',      count: total    },
+    { key: 'active',   label: 'Active',   count: active   },
+    { key: 'overdue',  label: 'Overdue',  count: overdue  },
+    { key: 'pending',  label: 'Pending',  count: pending  },
+    { key: 'returned', label: 'Returned', count: returned },
   ];
 
   return (
@@ -417,7 +458,7 @@ export default function BorrowingHistory() {
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold
           ${toast.type === 'success' ? 'bg-emerald-600 text-white' :
             toast.type === 'error'   ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
-          {toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ️'}
+          {toast.type === 'success' ? <Check className="w-4 h-4" /> : toast.type === 'error' ? <X className="w-4 h-4" /> : null}
           {toast.msg}
         </div>
       )}
@@ -446,18 +487,57 @@ export default function BorrowingHistory() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <StatCard icon="📚" value={loading ? '…' : total}    label="Total Borrowed" color="bg-blue-50 text-blue-600" />
-        <StatCard icon="📖" value={loading ? '…' : active}   label="Active"         color="bg-emerald-50 text-emerald-600" />
-        <StatCard icon="⚠️" value={loading ? '…' : overdue}  label="Overdue"
+        <StatCard icon={<Library className="w-5 h-5" />}       value={loading ? '…' : total}    label="Total Borrowed" color="bg-blue-50 text-blue-600" />
+        <StatCard icon={<BookOpen className="w-5 h-5" />}     value={loading ? '…' : active}   label="Active"         color="bg-emerald-50 text-emerald-600" />
+        <StatCard icon={<AlertTriangle className="w-5 h-5" />} value={loading ? '…' : overdue}  label="Overdue"
           sub={overdue > 0 ? 'Needs attention' : 'All good!'}
           color="bg-red-50 text-red-500" />
-        <StatCard icon="✅" value={loading ? '…' : returned} label="Returned"       color="bg-gray-100 text-gray-500" />
+        <StatCard icon={<CheckCircle className="w-5 h-5" />}  value={loading ? '…' : returned} label="Returned"       color="bg-gray-100 text-gray-500" />
       </div>
+
+      {/* ── Ready to collect banner ── */}
+      {!loading && readyToCollect.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Sparkles className="w-6 h-6 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="font-extrabold text-green-800 text-sm">
+                {readyToCollect.length === 1
+                  ? 'Your book request has been approved!'
+                  : `${readyToCollect.length} book requests have been approved!`}
+              </p>
+              <p className="text-xs text-green-600 mt-0.5">
+                Please visit the library desk with your student ID to collect your book.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {readyToCollect.map(l => (
+              <div key={l.id} className="flex items-center justify-between bg-white border border-green-100 rounded-xl px-4 py-3 gap-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-gray-900 truncate">{l.title}</p>
+                  <p className="text-xs text-gray-500 truncate">{l.author}</p>
+                </div>
+                {l.pickup_code && (
+                  <div className="flex-shrink-0 text-center bg-green-100 border border-green-300 rounded-xl px-4 py-2">
+                    <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest">Pickup Code</p>
+                    <p className="text-xl font-extrabold text-green-900 tracking-widest font-mono">{l.pickup_code}</p>
+                  </div>
+                )}
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-xs font-semibold text-green-700">Due: {l.due_date}</p>
+                  <p className="text-[11px] text-gray-400">Approved {l.borrow_date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Fine warning banner ── */}
       {!loading && unpaidFine > 0 && (
         <div className="flex items-start gap-4 bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-          <span className="text-2xl">💸</span>
+          <DollarSign className="w-6 h-6 text-red-500 flex-shrink-0" />
           <div className="flex-1">
             <p className="font-extrabold text-red-700 text-sm">Outstanding Fine: ${unpaidFine.toFixed(2)}</p>
             <p className="text-xs text-red-500 mt-0.5">
@@ -537,8 +617,8 @@ export default function BorrowingHistory() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl mb-3">
-            {filter === 'overdue' ? '⚠️' : filter === 'returned' ? '✅' : '📭'}
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+            {filter === 'overdue' ? <AlertTriangle className="w-7 h-7 text-gray-400" /> : filter === 'returned' ? <CheckCircle className="w-7 h-7 text-gray-400" /> : <Inbox className="w-7 h-7 text-gray-400" />}
           </div>
           <p className="font-bold text-gray-700 text-base">No records found</p>
           <p className="text-sm text-gray-400 mt-1">
@@ -561,6 +641,7 @@ export default function BorrowingHistory() {
               loan={loan}
               onSelect={setSelected}
               onCancel={handleCancel}
+              isReadyToCollect={readyToCollect.some(r => r.id === loan.id)}
             />
           ))}
         </div>

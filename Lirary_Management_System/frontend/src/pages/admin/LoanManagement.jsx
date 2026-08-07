@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
+import { Library, BookOpen, ClipboardList, CheckCircle, AlertTriangle, Clock, DollarSign, Inbox, Check, X, RotateCcw } from 'lucide-react';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 const fmt = (d) =>
@@ -52,7 +53,7 @@ function ConfirmModal({ action, loan, onConfirm, onClose, loading }) {
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-4">
           <div className={`w-10 h-10 bg-gradient-to-br ${cfg.color} rounded-2xl flex items-center justify-center text-xl shadow-sm`}>
-            {action === 'issue' ? '✓' : action === 'reject' ? '✕' : action === 'return' ? '↩️' : '💰'}
+            {action === 'issue' ? <Check className="w-5 h-5 text-white" /> : action === 'reject' ? <X className="w-5 h-5 text-white" /> : action === 'return' ? <RotateCcw className="w-5 h-5 text-white" /> : <DollarSign className="w-5 h-5 text-white" />}
           </div>
           <div>
             <p className="font-extrabold text-gray-900">{cfg.title}</p>
@@ -145,25 +146,25 @@ function LoanRow({ loan, onAction }) {
         {loan.status === 'pending' && (
           <>
             <button onClick={() => onAction(loan, 'issue')}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm">
-              ✓ Issue
+              className="inline-flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+              <Check className="w-3 h-3" /> Issue
             </button>
             <button onClick={() => onAction(loan, 'reject')}
               className="bg-white hover:bg-red-50 border border-red-200 text-red-500 text-[11px] font-bold px-2.5 py-1.5 rounded-lg transition-colors">
-              ✕
+              <X className="w-3 h-3" />
             </button>
           </>
         )}
         {loan.status === 'active' && (
           <button onClick={() => onAction(loan, 'return')}
-            className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors">
-            ↩ Return
+            className="inline-flex items-center gap-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors">
+            <RotateCcw className="w-3 h-3" /> Return
           </button>
         )}
         {loan.status === 'returned' && (loan.current_fine || 0) > 0 && !loan.fine_paid && (
           <button onClick={() => onAction(loan, 'pay-fine')}
-            className="bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors">
-            💰 Paid
+            className="inline-flex items-center gap-1 bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors">
+            <DollarSign className="w-3 h-3" /> Paid
           </button>
         )}
         {loan.status === 'returned' && (loan.current_fine === 0 || loan.fine_paid) && (
@@ -171,6 +172,206 @@ function LoanRow({ loan, onAction }) {
         )}
         {loan.status === 'rejected' && (
           <span className="text-[11px] text-gray-300 font-medium px-2">—</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Issue Book Modal ────────────────────────────────────────── */
+function IssueBookModal({ onClose, onIssued }) {
+  const [userQuery,    setUserQuery]    = useState('');
+  const [bookQuery,    setBookQuery]    = useState('');
+  const [userResults,  setUserResults]  = useState([]);
+  const [bookResults,  setBookResults]  = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [result,       setResult]       = useState(null);
+  const [error,        setError]        = useState('');
+  const userTimer = useRef(null);
+  const bookTimer = useRef(null);
+
+  const onUserInput = (v) => {
+    setUserQuery(v);
+    clearTimeout(userTimer.current);
+    if (v.length < 2) { setUserResults([]); return; }
+    userTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/api/users/search', { params: { q: v } });
+        setUserResults(data || []);
+      } catch { setUserResults([]); }
+    }, 300);
+  };
+
+  const onBookInput = (v) => {
+    setBookQuery(v);
+    clearTimeout(bookTimer.current);
+    if (v.length < 2) { setBookResults([]); return; }
+    bookTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await api.get('/api/books', { params: { search: v, limit: 10 } });
+        setBookResults((data.books || []).filter(b => b.available_copies > 0));
+      } catch { setBookResults([]); }
+    }, 300);
+  };
+
+  const handleIssue = async () => {
+    if (!selectedUser || !selectedBook) return;
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await api.post('/api/loans/direct-issue', {
+        user_id: selectedUser.id,
+        book_id: selectedBook.id,
+      });
+      setResult(data);
+      onIssued();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to issue book');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+
+        {result ? (
+          /* ── Success screen ── */
+          <div className="p-6 text-center">
+            <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Check className="w-7 h-7 text-emerald-600" />
+            </div>
+            <p className="font-extrabold text-gray-900 text-lg mb-1">Book Issued!</p>
+            <p className="text-sm text-gray-400 mb-5">Successfully issued to <span className="font-semibold text-gray-700">{selectedUser.name}</span></p>
+            <div className="bg-gray-50 rounded-2xl p-4 space-y-3 text-sm mb-5 text-left">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Book</span>
+                <span className="font-bold text-gray-900 text-right max-w-[60%] truncate">{selectedBook.title}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Due Date</span>
+                <span className="font-bold text-gray-900">{fmt(result.due_date)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Pickup Code</span>
+                <span className="font-bold font-mono text-indigo-600 tracking-wider">{result.pickup_code}</span>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm transition-colors">
+              Close
+            </button>
+          </div>
+        ) : (
+          /* ── Form screen ── */
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-sm">
+                <Library className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-extrabold text-gray-900">Issue Book Directly</p>
+                <p className="text-xs text-gray-400">Issue a book to a member without a prior request</p>
+              </div>
+              <button onClick={onClose} className="text-gray-300 hover:text-gray-500 text-xl leading-none">✕</button>
+            </div>
+
+            {/* User picker */}
+            <div className="mb-4">
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Member</label>
+              {selectedUser ? (
+                <div className="flex items-center gap-2.5 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
+                  <Avatar name={selectedUser.name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{selectedUser.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{selectedUser.email}</p>
+                  </div>
+                  <button onClick={() => { setSelectedUser(null); setUserQuery(''); setUserResults([]); }}
+                    className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">✕</button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input value={userQuery} onChange={e => onUserInput(e.target.value)}
+                    placeholder="Search by name or email…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
+                  {userResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-10 max-h-44 overflow-y-auto">
+                      {userResults.map(u => (
+                        <button key={u.id} onClick={() => { setSelectedUser(u); setUserQuery(''); setUserResults([]); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-0">
+                          <Avatar name={u.name} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{u.name}</p>
+                            <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Book picker */}
+            <div className="mb-5">
+              <label className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Book</label>
+              {selectedBook ? (
+                <div className="flex items-center gap-2.5 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2.5">
+                  <div className="w-9 h-9 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{selectedBook.title}</p>
+                    <p className="text-xs text-gray-400 truncate">{selectedBook.author} · {selectedBook.available_copies} available</p>
+                  </div>
+                  <button onClick={() => { setSelectedBook(null); setBookQuery(''); setBookResults([]); }}
+                    className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">✕</button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input value={bookQuery} onChange={e => onBookInput(e.target.value)}
+                    placeholder="Search by title or author…"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100" />
+                  {bookResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-10 max-h-44 overflow-y-auto">
+                      {bookResults.map(b => (
+                        <button key={b.id} onClick={() => { setSelectedBook(b); setBookQuery(''); setBookResults([]); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-gray-50 text-left border-b border-gray-50 last:border-0">
+                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <BookOpen className="w-4 h-4 text-indigo-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{b.title}</p>
+                            <p className="text-xs text-gray-400 truncate">{b.author}</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-emerald-600 flex-shrink-0">{b.available_copies} avail.</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {error && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 mb-4">{error}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={onClose}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl text-sm transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleIssue} disabled={!selectedUser || !selectedBook || loading}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold py-3 rounded-xl text-sm
+                  flex items-center justify-center gap-2 transition-colors shadow-sm shadow-emerald-200">
+                {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}
+                Issue Book
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -187,9 +388,10 @@ export default function LoanManagement() {
   const [status,    setStatus]   = useState(searchParams.get('status') || '');
   const [counts,    setCounts]   = useState({});
   const [loading,   setLoading]  = useState(true);
-  const [confirm,   setConfirm]  = useState(null); // { loan, action }
-  const [acting,    setActing]   = useState(false);
-  const [toast,     setToast]    = useState(null);
+  const [confirm,       setConfirm]      = useState(null); // { loan, action }
+  const [acting,        setActing]       = useState(false);
+  const [toast,         setToast]        = useState(null);
+  const [showIssueModal, setShowIssueModal] = useState(false);
 
   const LIMIT = 20;
 
@@ -253,11 +455,11 @@ export default function LoanManagement() {
   };
 
   const FILTERS = [
-    { key: '',         label: 'All',      icon: '📋' },
-    { key: 'pending',  label: 'Pending',  icon: '⏳' },
-    { key: 'active',   label: 'Active',   icon: '📖' },
-    { key: 'returned', label: 'Returned', icon: '✅' },
-    { key: 'rejected', label: 'Rejected', icon: '✕'  },
+    { key: '',         label: 'All',      icon: <ClipboardList className="w-3.5 h-3.5" /> },
+    { key: 'pending',  label: 'Pending',  icon: <Clock className="w-3.5 h-3.5" /> },
+    { key: 'active',   label: 'Active',   icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { key: 'returned', label: 'Returned', icon: <CheckCircle className="w-3.5 h-3.5" /> },
+    { key: 'rejected', label: 'Rejected', icon: <X className="w-3.5 h-3.5" /> },
   ];
 
   const overdueInView = loans.filter(l => l.is_overdue).length;
@@ -269,8 +471,16 @@ export default function LoanManagement() {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold
           ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
-          {toast.type === 'error' ? '✕' : '✓'} {toast.msg}
+          {toast.type === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />} {toast.msg}
         </div>
+      )}
+
+      {/* ── Issue Book modal ── */}
+      {showIssueModal && (
+        <IssueBookModal
+          onClose={() => setShowIssueModal(false)}
+          onIssued={() => { fetchLoans(); fetchCounts(); showToast('Book issued successfully!'); }}
+        />
       )}
 
       {/* ── Confirm modal ── */}
@@ -290,26 +500,32 @@ export default function LoanManagement() {
           <h1 className="text-2xl font-extrabold text-gray-900">Loans & Requests</h1>
           <p className="text-sm text-gray-400 mt-0.5">Manage all borrowing activity</p>
         </div>
-        {counts.pending > 0 && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
-            <span className="text-amber-500">⏳</span>
-            <span className="text-sm font-bold text-amber-700">{counts.pending} pending</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {counts.pending > 0 && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2">
+              <Clock className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-bold text-amber-700">{counts.pending} pending</span>
+            </div>
+          )}
+          <button onClick={() => setShowIssueModal(true)}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-sm shadow-emerald-200">
+            + Issue Book
+          </button>
+        </div>
       </div>
 
       {/* ── Status counts overview ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { key: 'pending',  label: 'Pending',  icon: '⏳', color: 'bg-amber-50 border-amber-100 text-amber-700'    },
-          { key: 'active',   label: 'Active',   icon: '📖', color: 'bg-emerald-50 border-emerald-100 text-emerald-700'},
-          { key: 'overdue',  label: 'Overdue',  icon: '⚠️', color: 'bg-red-50 border-red-100 text-red-600'           },
-          { key: 'returned', label: 'Returned', icon: '✅', color: 'bg-blue-50 border-blue-100 text-blue-600'         },
+          { key: 'pending',  label: 'Pending',  icon: <Clock className="w-5 h-5" />,          color: 'bg-amber-50 border-amber-100 text-amber-700'    },
+          { key: 'active',   label: 'Active',   icon: <BookOpen className="w-5 h-5" />,       color: 'bg-emerald-50 border-emerald-100 text-emerald-700'},
+          { key: 'overdue',  label: 'Overdue',  icon: <AlertTriangle className="w-5 h-5" />,  color: 'bg-red-50 border-red-100 text-red-600'           },
+          { key: 'returned', label: 'Returned', icon: <CheckCircle className="w-5 h-5" />,    color: 'bg-blue-50 border-blue-100 text-blue-600'         },
         ].map(s => (
           <button key={s.key}
             onClick={() => { setStatus(s.key === 'overdue' ? 'active' : s.key); setPage(1); }}
             className={`${s.color} border rounded-2xl p-4 flex items-center gap-3 text-left hover:opacity-80 transition-opacity`}>
-            <span className="text-xl">{s.icon}</span>
+            <span className="flex-shrink-0">{s.icon}</span>
             <div>
               <p className="text-lg font-extrabold leading-none">{counts[s.key] ?? '…'}</p>
               <p className="text-xs font-semibold mt-0.5 opacity-80">{s.label}</p>
@@ -345,7 +561,7 @@ export default function LoanManagement() {
       {/* ── Overdue sub-banner ── */}
       {!loading && status === 'active' && overdueInView > 0 && (
         <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-4">
-          <span>⚠️</span>
+          <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
           <p className="text-sm font-bold text-red-600">
             {overdueInView} of these loans {overdueInView === 1 ? 'is' : 'are'} overdue — highlighted below
           </p>
@@ -369,7 +585,9 @@ export default function LoanManagement() {
           </div>
         ) : loans.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl mb-3">📭</div>
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+              <Inbox className="w-7 h-7 text-gray-400" />
+            </div>
             <p className="font-bold text-gray-700">No records found</p>
             <p className="text-sm text-gray-400 mt-1">
               {status ? `No ${status} loans at the moment` : 'No loan records yet'}

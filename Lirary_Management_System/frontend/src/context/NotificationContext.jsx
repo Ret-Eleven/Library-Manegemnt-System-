@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import api from '../services/api';
+import { AlertTriangle, CheckCircle, Clock, ClipboardList } from 'lucide-react';
 
 const NotifCtx = createContext(null);
 
@@ -15,7 +16,7 @@ function fromUserLoans(loans) {
       items.push({
         id:     `overdue-${l.id}`,
         type:   'overdue',
-        icon:   '⚠️',
+        icon:   <AlertTriangle className="w-4 h-4" />,
         dotCls: 'bg-red-500',
         ringCls:'bg-red-100 text-red-600',
         title:  'Overdue Book',
@@ -26,20 +27,41 @@ function fromUserLoans(loans) {
       return;
     }
 
-    if (l.status === 'active' && l.due_date) {
-      const days = Math.ceil((new Date(l.due_date) - today) / 86400000);
-      if (days >= 0 && days <= 3) {
+    if (l.status === 'active' && l.borrow_date) {
+      const daysSinceApproval = Math.floor((today - new Date(l.borrow_date)) / 86400000);
+
+      // Notify user to collect book within 3 days of approval
+      if (daysSinceApproval <= 3) {
         items.push({
-          id:     `due-soon-${l.id}`,
-          type:   'due_soon',
-          icon:   '⏰',
-          dotCls: 'bg-amber-500',
-          ringCls:'bg-amber-100 text-amber-700',
-          title:  'Due Soon',
-          body:   `"${l.title}" is due ${days === 0 ? 'today' : `in ${days} day${days > 1 ? 's' : ''}`}.`,
+          id:     `approved-${l.id}`,
+          type:   'approved',
+          icon:   <CheckCircle className="w-4 h-4" />,
+          dotCls: 'bg-green-500',
+          ringCls:'bg-green-100 text-green-700',
+          title:  'Book Approved — Ready to Collect!',
+          body:   l.pickup_code
+            ? `"${l.title}" approved. Your pickup code: ${l.pickup_code}. Due: ${l.due_date}`
+            : `"${l.title}" has been approved. Please collect it at the library desk. Due: ${l.due_date}`,
           link:   '/user/history',
-          urgent: days === 0,
+          urgent: true,
         });
+      }
+
+      if (l.due_date) {
+        const days = Math.ceil((new Date(l.due_date) - today) / 86400000);
+        if (days >= 0 && days <= 3) {
+          items.push({
+            id:     `due-soon-${l.id}`,
+            type:   'due_soon',
+            icon:   <Clock className="w-4 h-4" />,
+            dotCls: 'bg-amber-500',
+            ringCls:'bg-amber-100 text-amber-700',
+            title:  'Due Soon',
+            body:   `"${l.title}" is due ${days === 0 ? 'today' : `in ${days} day${days > 1 ? 's' : ''}`}.`,
+            link:   '/user/history',
+            urgent: days === 0,
+          });
+        }
       }
     }
 
@@ -47,7 +69,7 @@ function fromUserLoans(loans) {
       items.push({
         id:     `pending-${l.id}`,
         type:   'pending',
-        icon:   '⏳',
+        icon:   <Clock className="w-4 h-4" />,
         dotCls: 'bg-blue-400',
         ringCls:'bg-blue-100 text-blue-600',
         title:  'Request Pending',
@@ -68,7 +90,7 @@ function fromAdminCounts(pendingTotal, overdueCount) {
     items.push({
       id:     `admin-pending-${pendingTotal}`,
       type:   'pending',
-      icon:   '📋',
+      icon:   <ClipboardList className="w-4 h-4" />,
       dotCls: 'bg-orange-500',
       ringCls:'bg-orange-100 text-orange-700',
       title:  `${pendingTotal} Pending Request${pendingTotal > 1 ? 's' : ''}`,
@@ -82,7 +104,7 @@ function fromAdminCounts(pendingTotal, overdueCount) {
     items.push({
       id:     `admin-overdue-${overdueCount}`,
       type:   'overdue',
-      icon:   '⚠️',
+      icon:   <AlertTriangle className="w-4 h-4" />,
       dotCls: 'bg-red-500',
       ringCls:'bg-red-100 text-red-600',
       title:  `${overdueCount} Overdue Loan${overdueCount > 1 ? 's' : ''}`,
@@ -102,7 +124,7 @@ function fromStats(stats) {
     items.push({
       id:     `super-pending-${stats.pendingRequests}`,
       type:   'pending',
-      icon:   '📋',
+      icon:   <ClipboardList className="w-4 h-4" />,
       dotCls: 'bg-orange-500',
       ringCls:'bg-orange-100 text-orange-700',
       title:  `${stats.pendingRequests} Pending Requests`,
@@ -116,7 +138,7 @@ function fromStats(stats) {
     items.push({
       id:     `super-overdue-${stats.overdueLoans}`,
       type:   'overdue',
-      icon:   '⚠️',
+      icon:   <AlertTriangle className="w-4 h-4" />,
       dotCls: 'bg-red-500',
       ringCls:'bg-red-100 text-red-600',
       title:  `${stats.overdueLoans} Overdue Loans`,

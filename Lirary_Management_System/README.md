@@ -1,4 +1,4 @@
-# LibraryMS — Library Management System
+# LibraryOS — Library Management System
 
 A full-stack web application for managing a university library. Built for the **Royal University of Phnom Penh (RUPP)** as a Year 2 Semester 2 project.
 
@@ -14,6 +14,7 @@ A full-stack web application for managing a university library. Built for the **
 | Auth | JWT (JSON Web Tokens) + bcryptjs |
 | HTTP Client | Axios |
 | Routing | React Router v6 |
+| Book Covers | Open Library Covers API |
 
 ---
 
@@ -23,7 +24,10 @@ A full-stack web application for managing a university library. Built for the **
 Lirary_Management_System/
 ├── backend/                  # Express.js API server
 │   ├── config/
-│   │   └── database.js       # Supabase client setup
+│   │   ├── database.js       # Supabase client setup
+│   │   ├── identity.js       # Opaque id prefixing (mem_/staff_/req_/iss_) across split tables
+│   │   ├── lookups.js        # findOrCreateAuthor / findOrCreateCategory / splitName
+│   │   └── loanFormat.js     # Shared loan enrichment (book_request + book_issue → flat loan shape)
 │   ├── middleware/
 │   │   ├── auth.js           # JWT authentication middleware
 │   │   └── rbac.js           # Role-based access control
@@ -46,7 +50,7 @@ Lirary_Management_System/
         ├── pages/
         │   ├── Home.jsx          # Public landing page
         │   ├── Login.jsx         # Split-screen login
-        │   ├── Register.jsx      # Multi-step registration (Student / Public)
+        │   ├── Register.jsx      # Multi-step registration (Student / Public+Staff)
         │   ├── admin/
         │   │   ├── AdminLayout.jsx
         │   │   ├── AdminDashboard.jsx  # Pending approvals + stats
@@ -54,7 +58,7 @@ Lirary_Management_System/
         │   │   └── LoanManagement.jsx  # Full loan lifecycle management
         │   ├── user/
         │   │   ├── UserLayout.jsx
-        │   │   ├── UserHome.jsx        # User dashboard
+        │   │   ├── UserHome.jsx        # User dashboard with recent loans
         │   │   ├── BookCatalog.jsx     # Browse & request books
         │   │   └── BorrowingHistory.jsx# Loan history + detail modal
         │   ├── superadmin/
@@ -84,12 +88,15 @@ Lirary_Management_System/
 
 ### Public
 - Landing page with catalog preview and feature highlights
-- Student and Non-Student registration paths
+- **Student registration** — instant verification via institutional email
+- **Public / Staff registration** — manual ID verification path with National ID / Passport number and expiry date
 - JWT-based login with role-based redirect
 
 ### User Dashboard
 - Book catalog with search and category filter
+- Book cover images loaded from the [Open Library Covers API](https://openlibrary.org/dev/docs/api#anchor-covers) by ISBN; falls back to a colored gradient with title initials when no cover is available
 - Borrow request submission
+- User home page with recent loans list (including book cover images)
 - Borrowing history with status filters (Active / Overdue / Pending / Returned)
 - Loan detail modal — timeline, dates, fine summary
 - Cancel pending requests
@@ -136,7 +143,7 @@ Create `backend/.env`:
 PORT=5000
 CLIENT_URL=http://localhost:5173
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-service-role-key
+SUPABASE_KEY=your-publishable-key   # RLS is disabled on all tables; the Express backend enforces auth itself
 JWT_SECRET=your-jwt-secret
 ```
 
@@ -172,47 +179,25 @@ Open [http://localhost:5173](http://localhost:5173)
 
 ## Database Schema
 
-```sql
--- Users
-CREATE TABLE users (
-  id          SERIAL PRIMARY KEY,
-  name        TEXT NOT NULL,
-  email       TEXT UNIQUE NOT NULL,
-  password    TEXT NOT NULL,
-  role        TEXT DEFAULT 'user',   -- 'user' | 'admin' | 'superadmin'
-  is_active   INTEGER DEFAULT 1,
-  created_at  TIMESTAMP DEFAULT NOW()
-);
+The backend runs on a normalized Postgres schema (Supabase). Core tables:
 
--- Books
-CREATE TABLE books (
-  id               SERIAL PRIMARY KEY,
-  title            TEXT NOT NULL,
-  author           TEXT NOT NULL,
-  isbn             TEXT,
-  category         TEXT,
-  published_year   INTEGER,
-  description      TEXT,
-  total_copies     INTEGER DEFAULT 1,
-  available_copies INTEGER DEFAULT 1,
-  created_at       TIMESTAMP DEFAULT NOW()
-);
+| Table | Purpose | Key columns |
+|---|---|---|
+| `member` | Patrons — role is implicitly `user` | `member_id`, `first_name`, `last_name`, `email_id`, `password_hash`, `is_active` |
+| `library_staff` | Admins & superadmins | `issued_by_id`, `staff_name`, `email`, `password_hash`, `staff_designation` (`admin`\|`superadmin`), `is_active` |
+| `book` | Book catalog | `book_id`, `book_title`, `isbn_code`, `category_id`, `copies_total`, `copies_available`, `published_year`, `description`, `cover_url` |
+| `author` | Authors | `author_id`, `first_name`, `last_name` |
+| `book_author` | Book ↔ author (many-to-many) | `book_id`, `author_id` |
+| `category` | Book categories | `category_id`, `category_name` |
+| `book_request` | Pending / rejected borrow requests | `request_id`, `book_id`, `member_id`, `request_date`, `status` (`pending`\|`approved`\|`rejected`) |
+| `book_issue` | Active / returned loans | `issue_id`, `book_id`, `member_id`, `issued_by_id`, `issue_date`, `due_date`, `return_date`, `status` (`active`\|`returned`), `pickup_code` |
+| `fine_due` | Overdue fines | `fine_id`, `member_id`, `issue_id`, `fine_date`, `fine_total`, `paid` |
 
--- Transactions (loans)
-CREATE TABLE transactions (
-  id           SERIAL PRIMARY KEY,
-  user_id      INTEGER REFERENCES users(id),
-  book_id      INTEGER REFERENCES books(id),
-  issued_by    INTEGER REFERENCES users(id),
-  status       TEXT DEFAULT 'pending',  -- 'pending' | 'active' | 'returned' | 'rejected'
-  borrow_date  DATE,
-  due_date     DATE,
-  return_date  DATE,
-  fine_amount  NUMERIC DEFAULT 0,
-  fine_paid    INTEGER DEFAULT 0,
-  created_at   TIMESTAMP DEFAULT NOW()
-);
-```
+Notes:
+- **User and loan identities are split across two tables each** (`member`/`library_staff`, `book_request`/`book_issue`). To keep a single stable id per record, the API exposes opaque prefixed ids — `mem_<id>` / `staff_<id>` for users, `req_<id>` / `iss_<id>` for loans — which the backend parses to know which table to query. The frontend treats these as opaque strings and never needs to know the split exists.
+- Role changes are only allowed *within* an account type (e.g. `admin` ↔ `superadmin`). Promoting a `member` to staff (or vice versa) isn't supported, since it would require moving the row to a different table with a new id.
+- Deleting a book is blocked once it has **any** loan history (not just active/pending), because `book_issue`/`book_request` hold real foreign keys to `book`.
+- Row Level Security is disabled on all tables — the Express backend is the only client and already enforces auth/roles itself.
 
 ---
 
@@ -233,6 +218,7 @@ CREATE TABLE transactions (
 | Method | Path | Role | Description |
 |---|---|---|---|
 | GET | `/` | Any | List books (search, category, pagination) |
+| GET | `/categories` | Any | List distinct categories |
 | GET | `/:id` | Any | Get single book |
 | POST | `/` | Admin+ | Add book |
 | PUT | `/:id` | Admin+ | Update book |
@@ -256,8 +242,12 @@ CREATE TABLE transactions (
 
 | Method | Path | Role | Description |
 |---|---|---|---|
-| GET | `/` | Superadmin | List all users |
-| PUT | `/:id` | Superadmin | Update role / active status |
+| GET | `/` | Superadmin | List all users (filter by role/search, paginated) |
+| POST | `/` | Superadmin | Create a user or admin account |
+| GET | `/search` | Admin+ | Search active members by name/email (for direct-issue) |
+| PUT | `/:id` | Superadmin | Update name / active status / role (within account type only) |
+| DELETE | `/:id` | Superadmin | Deactivate account |
+| GET | `/:id/loans` | Admin+ | A specific member's loan history |
 
 ---
 
@@ -265,9 +255,9 @@ CREATE TABLE transactions (
 
 | Role | Email | Password |
 |---|---|---|
-| Superadmin | superadmin@library.com | admin123 |
-| Admin (Librarian) | admin@library.com | admin123 |
-| User (Student) | user@library.com | user123 |
+| Superadmin | demo.superadmin@library.test | Demo@123 |
+| Admin | demo.admin@library.test | Demo@123 |
+| User | demo.user1@library.test | Demo@123 |
 
 ---
 
@@ -283,4 +273,4 @@ CREATE TABLE transactions (
 ## Authors
 
 Developed by the **RUPP Year 2 — Data Science & Engineering** team  
-Royal University of Phnom Penh · 2025
+Royal University of Phnom Penh · 2025–2026

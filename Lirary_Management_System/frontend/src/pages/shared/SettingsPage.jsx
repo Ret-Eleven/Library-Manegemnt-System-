@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Bell, Monitor, User, AlertTriangle, Check } from 'lucide-react';
 
 const PREF_KEY = 'lms_prefs';
 
@@ -73,7 +74,7 @@ export default function SettingsPage() {
       {/* Notifications */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">🔔</span>
+          <Bell className="w-5 h-5 text-gray-600" />
           <h3 className="font-extrabold text-gray-900">Notifications</h3>
         </div>
         <Toggle label="Email Notifications"  desc="Receive updates and alerts via email"            checked={prefs.emailNotifications} onChange={() => toggle('emailNotifications')} />
@@ -85,7 +86,7 @@ export default function SettingsPage() {
       {/* Display */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">🖥️</span>
+          <Monitor className="w-5 h-5 text-gray-600" />
           <h3 className="font-extrabold text-gray-900">Display</h3>
         </div>
         <Toggle label="Compact View"    desc="Show more items with less spacing"            checked={prefs.compactView}    onChange={() => toggle('compactView')} />
@@ -95,7 +96,7 @@ export default function SettingsPage() {
       {/* Account info */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-lg">👤</span>
+          <User className="w-5 h-5 text-gray-600" />
           <h3 className="font-extrabold text-gray-900">Account</h3>
         </div>
         <div className="space-y-0 text-sm divide-y divide-gray-50">
@@ -119,14 +120,14 @@ export default function SettingsPage() {
           className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all
             ${saved ? 'bg-emerald-600 text-white' : 'bg-slate-900 hover:bg-slate-700 text-white'}`}
         >
-          {saved ? '✓ Saved!' : 'Save Preferences'}
+          {saved ? <span className="inline-flex items-center gap-1.5"><Check className="w-4 h-4" /> Saved!</span> : 'Save Preferences'}
         </button>
       </div>
 
       {/* Danger zone */}
       <div className="bg-red-50 border border-red-100 rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-lg">⚠️</span>
+          <AlertTriangle className="w-5 h-5 text-red-600" />
           <h3 className="font-extrabold text-red-700">Danger Zone</h3>
         </div>
         <p className="text-sm text-red-600 mb-4">Sign out of your account on this device.</p>

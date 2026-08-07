@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { Library, Crown, Settings as SettingsIcon, BookOpen, LogOut, Bell } from 'lucide-react';
 
 const ROLE_BADGE = {
   user:       'bg-blue-100 text-blue-800',
@@ -51,7 +52,9 @@ function NotificationPanel({ onClose }) {
           </div>
         ) : notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center text-2xl mb-3">🔔</div>
+            <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+              <Bell className="w-6 h-6 text-gray-300" />
+            </div>
             <p className="text-sm font-semibold text-gray-700">All caught up!</p>
             <p className="text-xs text-gray-400 mt-0.5">No new notifications right now.</p>
           </div>
@@ -172,7 +175,7 @@ export default function AppLayout({ navItems, children }) {
 
         {/* Logo */}
         <div className="flex items-center gap-3 p-5 border-b border-blue-800">
-          <span className="text-2xl">📚</span>
+          <Library className="w-7 h-7 text-blue-200 flex-shrink-0" />
           <div>
             <p className="text-lg font-bold leading-tight">LibraryMS</p>
             <p className="text-xs text-blue-300">Management System</p>
@@ -198,7 +201,7 @@ export default function AppLayout({ navItems, children }) {
                   ? 'bg-white/15 text-white shadow-sm'
                   : 'text-blue-200 hover:bg-white/10 hover:text-white'}`}
             >
-              <span className="text-base w-5 text-center">{item.icon}</span>
+              <item.icon className="w-5 h-5 flex-shrink-0" />
               {item.label}
             </Link>
           ))}
@@ -211,18 +214,18 @@ export default function AppLayout({ navItems, children }) {
             {user?.role === 'superadmin' && (
               <Link to="/superadmin" onClick={() => setSidebarOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-blue-200 hover:bg-white/10 hover:text-white transition-colors">
-                <span>👑</span> Superadmin
+                <Crown className="w-4 h-4" /> Superadmin
               </Link>
             )}
             {(user?.role === 'admin' || user?.role === 'superadmin') && (
               <Link to="/admin" onClick={() => setSidebarOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-blue-200 hover:bg-white/10 hover:text-white transition-colors">
-                <span>⚙️</span> Admin Panel
+                <SettingsIcon className="w-4 h-4" /> Admin Panel
               </Link>
             )}
             <Link to="/user" onClick={() => setSidebarOpen(false)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-blue-200 hover:bg-white/10 hover:text-white transition-colors">
-              <span>📖</span> User View
+              <BookOpen className="w-4 h-4" /> User View
             </Link>
           </div>
         )}
@@ -231,7 +234,7 @@ export default function AppLayout({ navItems, children }) {
         <div className="px-3 py-3 border-t border-blue-800">
           <button onClick={handleLogout}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-blue-200 hover:bg-red-600 hover:text-white transition-colors w-full">
-            <span>🚪</span> Sign Out
+            <LogOut className="w-4 h-4" /> Sign Out
           </button>
         </div>
       </aside>

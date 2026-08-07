@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Library, BookOpen, Search, ArrowDownToLine, Clock, BarChart3, Globe, Phone, Mail, Link2, Send } from 'lucide-react';
 
 /* ── Static data ─────────────────────────────────────────────── */
 const BOOKS = [
@@ -20,10 +21,10 @@ const EVENTS = [
 ];
 
 const FEATURES = [
-  { icon: '🔍', title: 'Smart Search',       desc: 'Find any book instantly by title, author, or ISBN across the entire collection.',  grad: 'from-blue-500 to-cyan-500'     },
-  { icon: '📥', title: 'Easy Borrowing',     desc: 'Request books online in seconds. Get notified the moment your request is approved.', grad: 'from-violet-500 to-purple-500' },
-  { icon: '⏰', title: 'Due Date Tracking',  desc: 'Never miss a return. Clear due-date display with automatic overdue alerts.',         grad: 'from-amber-500 to-orange-500'  },
-  { icon: '📊', title: 'Personal Dashboard', desc: 'Track all your loans, fines, and history from one clean, unified dashboard.',        grad: 'from-emerald-500 to-teal-500'  },
+  { icon: <Search className="w-6 h-6 text-white" />,          title: 'Smart Search',       desc: 'Find any book instantly by title, author, or ISBN across the entire collection.',  grad: 'from-blue-500 to-cyan-500'     },
+  { icon: <ArrowDownToLine className="w-6 h-6 text-white" />, title: 'Easy Borrowing',     desc: 'Request books online in seconds. Get notified the moment your request is approved.', grad: 'from-violet-500 to-purple-500' },
+  { icon: <Clock className="w-6 h-6 text-white" />,           title: 'Due Date Tracking',  desc: 'Never miss a return. Clear due-date display with automatic overdue alerts.',         grad: 'from-amber-500 to-orange-500'  },
+  { icon: <BarChart3 className="w-6 h-6 text-white" />,       title: 'Personal Dashboard', desc: 'Track all your loans, fines, and history from one clean, unified dashboard.',        grad: 'from-emerald-500 to-teal-500'  },
 ];
 
 const HOW_IT_WORKS = [
@@ -43,7 +44,7 @@ function Cover({ src, title }) {
       <div className="absolute inset-0">
         {src && !err
           ? <img src={src} alt={title} className="w-full h-full object-cover" onError={() => setErr(true)} />
-          : <div className="w-full h-full flex items-center justify-center text-4xl opacity-20">📖</div>}
+          : <div className="w-full h-full flex items-center justify-center opacity-20"><BookOpen className="w-8 h-8 text-white" /></div>}
       </div>
     </div>
   );
@@ -63,8 +64,8 @@ function PublicHome() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white text-lg shadow-lg shadow-blue-900/50">
-              📚
+            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
+              <Library className="w-5 h-5 text-white" />
             </div>
             <div className="leading-tight hidden sm:block">
               <p className="text-white font-extrabold text-sm tracking-tight">LibraryMS</p>
@@ -196,7 +197,7 @@ function PublicHome() {
       {/* ━━━━━━━━━━━━━━ MARQUEE STRIP ━━━━━━━━━━━━━━ */}
       <div className="bg-blue-600 py-3 overflow-hidden">
         <div className="flex gap-8 whitespace-nowrap animate-[marquee_20s_linear_infinite]">
-          {Array(3).fill(['📚 Free Access', '🔒 Secure Platform', '🎓 RUPP Students', '⚡ Instant Requests', '📅 Smart Reminders', '🌐 Online 24/7']).flat().map((t, i) => (
+          {Array(3).fill(['Free Access', 'Secure Platform', 'RUPP Students', 'Instant Requests', 'Smart Reminders', 'Online 24/7']).flat().map((t, i) => (
             <span key={i} className="text-blue-100 text-sm font-semibold flex-shrink-0">{t}</span>
           ))}
         </div>
@@ -214,7 +215,7 @@ function PublicHome() {
             {FEATURES.map(f => (
               <div key={f.title}
                 className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.grad} flex items-center justify-center text-2xl mb-4 shadow-lg
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.grad} flex items-center justify-center mb-4 shadow-lg
                   group-hover:scale-110 transition-transform`}>
                   {f.icon}
                 </div>
@@ -347,15 +348,15 @@ function PublicHome() {
             {/* Brand */}
             <div>
               <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-lg">📚</div>
+                <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center"><Library className="w-5 h-5 text-white" /></div>
                 <span className="text-white font-extrabold text-base">LibraryMS</span>
               </div>
               <p className="text-sm leading-relaxed mb-4">
                 The official library management system of the Royal University of Phnom Penh.
               </p>
               <div className="flex gap-2">
-                {['🌐', '📘', '🐦'].map((ic, i) => (
-                  <div key={i} className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-sm hover:bg-white/10 cursor-pointer transition-colors">
+                {[<Globe className="w-4 h-4" />, <Link2 className="w-4 h-4" />, <Send className="w-4 h-4" />].map((ic, i) => (
+                  <div key={i} className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center hover:bg-white/10 cursor-pointer transition-colors text-slate-400">
                     {ic}
                   </div>
                 ))}
@@ -398,8 +399,8 @@ function PublicHome() {
               <div className="space-y-2 text-sm">
                 <p>Royal University of Phnom Penh</p>
                 <p>Russian Federation Blvd, Phnom Penh</p>
-                <p>📞 +855 23 883 640</p>
-                <p>✉️ library@rupp.edu.kh</p>
+                <p className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 flex-shrink-0" /> +855 23 883 640</p>
+                <p className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 flex-shrink-0" /> library@rupp.edu.kh</p>
               </div>
             </div>
           </div>

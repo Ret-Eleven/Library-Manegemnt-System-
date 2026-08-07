@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Library, BookOpen, Zap, Bell, BarChart3, Check, X } from 'lucide-react';
 
 const ROLE_HOME = { superadmin: '/superadmin', admin: '/admin', user: '/user' };
 
 const FEATURES = [
-  { icon: '📚', text: 'Access thousands of books online'     },
-  { icon: '⚡', text: 'Request and manage loans instantly'   },
-  { icon: '🔔', text: 'Get due-date reminders automatically' },
-  { icon: '📊', text: 'Track your full borrowing history'    },
+  { icon: <BookOpen className="w-4 h-4 text-white" />, text: 'Access thousands of books online'     },
+  { icon: <Zap className="w-4 h-4 text-white" />,      text: 'Request and manage loans instantly'   },
+  { icon: <Bell className="w-4 h-4 text-white" />,     text: 'Get due-date reminders automatically' },
+  { icon: <BarChart3 className="w-4 h-4 text-white" />,text: 'Track your full borrowing history'    },
 ];
 
 export default function Login() {
@@ -57,8 +58,8 @@ export default function Login() {
 
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 mb-auto">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-blue-900/50">
-              📚
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50">
+              <Library className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="text-white font-extrabold text-base leading-tight">LibraryMS</p>
@@ -82,7 +83,7 @@ export default function Login() {
             <ul className="space-y-3 mb-10">
               {FEATURES.map(f => (
                 <li key={f.text} className="flex items-center gap-3">
-                  <span className="w-8 h-8 bg-white/8 rounded-lg flex items-center justify-center text-base flex-shrink-0">
+                  <span className="w-8 h-8 bg-white/8 rounded-lg flex items-center justify-center flex-shrink-0">
                     {f.icon}
                   </span>
                   <span className="text-slate-300 text-sm">{f.text}</span>
@@ -104,7 +105,7 @@ export default function Login() {
 
         {/* Mobile logo */}
         <Link to="/" className="flex items-center gap-2.5 mb-8 lg:hidden">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-lg">📚</div>
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center"><Library className="w-4 h-4 text-white" /></div>
           <span className="text-gray-900 font-extrabold text-lg">LibraryMS</span>
         </Link>
 
@@ -124,7 +125,7 @@ export default function Login() {
           {/* Success message */}
           {successMsg && (
             <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-sm">
-              <span className="mt-0.5 flex-shrink-0">✓</span>
+              <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
               {successMsg}
             </div>
           )}
@@ -132,7 +133,7 @@ export default function Login() {
           {/* Error message */}
           {error && (
             <div className="mb-5 flex items-start gap-2.5 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-              <span className="mt-0.5 flex-shrink-0">✕</span>
+              <X className="w-4 h-4 mt-0.5 flex-shrink-0" />
               {error}
             </div>
           )}

@@ -17,7 +17,7 @@ export default function UserManagement() {
   const [search, setSearch]   = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [loading, setLoading] = useState(true);
-  const [modal, setModal]     = useState(null); // null | 'create' | 'edit' | 'deactivate'
+  const [modal, setModal]     = useState(null); // null | 'create' | 'edit' | 'delete'
   const [selected, setSelected] = useState(null);
   const [form, setForm]       = useState(EMPTY_FORM);
   const [editForm, setEditForm] = useState({ name: '', role: 'user', is_active: true });
@@ -59,9 +59,9 @@ export default function UserManagement() {
     setModal('edit');
   };
 
-  const openDeactivate = (user) => {
+  const openDelete = (user) => {
     setSelected(user);
-    setModal('deactivate');
+    setModal('delete');
   };
 
   const closeModal = () => { setModal(null); setSelected(null); };
@@ -96,11 +96,11 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeactivate = async () => {
+  const handleDelete = async () => {
     setSaving(true);
     try {
       await api.delete(`/api/users/${selected.id}`);
-      showToast('User deactivated.');
+      showToast('User deleted.');
       closeModal();
       fetchUsers();
     } catch (err) {
@@ -191,8 +191,8 @@ export default function UserManagement() {
                       <div className="flex gap-2">
                         <button onClick={() => openEdit(user)} className="btn-secondary btn-sm">Edit</button>
                         {user.role !== 'superadmin' && (
-                          <button onClick={() => openDeactivate(user)} className="btn-danger btn-sm">
-                            {user.is_active ? 'Deactivate' : 'Deactivated'}
+                          <button onClick={() => openDelete(user)} className="btn-danger btn-sm">
+                            {user.is_active ? 'Delete' : 'Deleted'}
                           </button>
                         )}
                       </div>
@@ -290,19 +290,19 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* Deactivate modal */}
-      {modal === 'deactivate' && selected && (
+      {/* Delete modal */}
+      {modal === 'delete' && selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <h2 className="text-xl font-bold mb-2">Deactivate Account</h2>
+            <h2 className="text-xl font-bold mb-2">Delete Account</h2>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to deactivate <strong>{selected.name}</strong>'s account?
+              Are you sure you want to delete <strong>{selected.name}</strong>'s account?
               Their pending loan requests will be rejected.
             </p>
             <div className="flex justify-end gap-3">
               <button onClick={closeModal} className="btn-secondary">Cancel</button>
-              <button onClick={handleDeactivate} className="btn-danger" disabled={saving}>
-                {saving ? 'Deactivating…' : 'Deactivate'}
+              <button onClick={handleDelete} className="btn-danger" disabled={saving}>
+                {saving ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>

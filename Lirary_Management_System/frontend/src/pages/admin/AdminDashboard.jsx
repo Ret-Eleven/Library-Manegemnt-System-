@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import {
+  Clock, BookOpen, AlertTriangle, Library, Plus, ClipboardList,
+  CheckCircle, X, Check, Inbox,
+} from 'lucide-react';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 const fmt = (d) =>
@@ -16,7 +20,7 @@ const greeting = () => {
 function StatCard({ icon, value, label, sub, gradient, loading }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
-      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl shadow-md flex-shrink-0`}>
+      <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md flex-shrink-0`}>
         {icon}
       </div>
       <div className="min-w-0">
@@ -74,7 +78,7 @@ function RequestCard({ loan, onIssue, onReject, busy }) {
         >
           {busy === `${loan.id}-issue` ? (
             <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"/>
-          ) : '✓'} Approve
+          ) : <Check className="w-3 h-3" />} Approve
         </button>
         <button
           onClick={() => onReject(loan.id)}
@@ -82,7 +86,7 @@ function RequestCard({ loan, onIssue, onReject, busy }) {
           className="flex items-center gap-1 bg-white hover:bg-red-50 border border-red-200
             text-red-500 text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors"
         >
-          {busy === `${loan.id}-reject` ? '…' : '✕'}
+          {busy === `${loan.id}-reject` ? '…' : <X className="w-3 h-3" />}
         </button>
       </div>
     </div>
@@ -91,10 +95,10 @@ function RequestCard({ loan, onIssue, onReject, busy }) {
 
 /* ── Activity item ───────────────────────────────────────────── */
 const ACTIVITY_CFG = {
-  pending:  { dot: 'bg-amber-400',  label: 'Requested', icon: '📋' },
-  active:   { dot: 'bg-emerald-500', label: 'Issued',   icon: '📖' },
-  returned: { dot: 'bg-blue-400',    label: 'Returned', icon: '✅' },
-  rejected: { dot: 'bg-gray-300',    label: 'Rejected', icon: '✕'  },
+  pending:  { dot: 'bg-amber-400',   label: 'Requested' },
+  active:   { dot: 'bg-emerald-500', label: 'Issued'    },
+  returned: { dot: 'bg-blue-400',    label: 'Returned'  },
+  rejected: { dot: 'bg-gray-300',    label: 'Rejected'  },
 };
 
 function ActivityItem({ loan }) {
@@ -180,7 +184,7 @@ export default function AdminDashboard() {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold
           ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
-          {toast.type === 'error' ? '✕' : '✓'} {toast.msg}
+          {toast.type === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />} {toast.msg}
         </div>
       )}
 
@@ -197,7 +201,7 @@ export default function AdminDashboard() {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
             <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-              {greeting()}, {user?.name?.split(' ')[0]} 👋
+              {greeting()}, {user?.name?.split(' ')[0]}
             </h1>
             <p className="text-blue-300 text-sm mt-1">
               {stats.pending > 0
@@ -210,12 +214,12 @@ export default function AdminDashboard() {
             <Link to="/admin/books"
               className="inline-flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/20
                 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors backdrop-blur-sm">
-              📚 Books
+              <Library className="w-4 h-4" /> Books
             </Link>
             <Link to="/admin/loans"
               className="inline-flex items-center gap-2 bg-white text-blue-900 hover:bg-blue-50
                 text-sm font-bold px-4 py-2.5 rounded-xl transition-colors shadow-lg">
-              📋 All Loans
+              <ClipboardList className="w-4 h-4" /> All Loans
             </Link>
           </div>
         </div>
@@ -224,22 +228,22 @@ export default function AdminDashboard() {
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          icon="⏳" value={stats.pending} label="Pending Requests"
+          icon={<Clock className="w-6 h-6 text-white" />} value={stats.pending} label="Pending Requests"
           sub={stats.pending > 0 ? 'Needs review' : 'Queue clear'}
           gradient="from-amber-400 to-orange-500" loading={loading}
         />
         <StatCard
-          icon="📖" value={stats.active} label="Active Loans"
+          icon={<BookOpen className="w-6 h-6 text-white" />} value={stats.active} label="Active Loans"
           sub="Currently borrowed"
           gradient="from-blue-500 to-indigo-600" loading={loading}
         />
         <StatCard
-          icon="⚠️" value={stats.overdue} label="Overdue"
+          icon={<AlertTriangle className="w-6 h-6 text-white" />} value={stats.overdue} label="Overdue"
           sub={stats.overdue > 0 ? 'Needs attention' : 'All on time'}
           gradient="from-red-500 to-rose-600" loading={loading}
         />
         <StatCard
-          icon="📚" value={stats.books} label="Total Books"
+          icon={<Library className="w-6 h-6 text-white" />} value={stats.books} label="Total Books"
           sub="In catalog"
           gradient="from-violet-500 to-purple-700" loading={loading}
         />
@@ -252,7 +256,7 @@ export default function AdminDashboard() {
         <div className="lg:col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center text-base">⏳</div>
+              <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500"><Clock className="w-4 h-4" /></div>
               <div>
                 <p className="font-extrabold text-gray-900 text-sm">Pending Approvals</p>
                 <p className="text-xs text-gray-400">{stats.pending} request{stats.pending !== 1 ? 's' : ''} waiting</p>
@@ -269,7 +273,7 @@ export default function AdminDashboard() {
               [1,2,3].map(i => <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse"/>)
             ) : pending.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-3xl mb-3">✅</div>
+                <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mb-3 text-emerald-500"><CheckCircle className="w-8 h-8" /></div>
                 <p className="font-bold text-gray-700">All clear!</p>
                 <p className="text-sm text-gray-400 mt-1">No pending requests right now.</p>
               </div>
@@ -295,15 +299,15 @@ export default function AdminDashboard() {
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Quick Actions</p>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { to: '/admin/books',        icon: '➕', label: 'Add Book',      color: 'from-blue-500 to-indigo-600' },
-                { to: '/admin/loans',        icon: '📋', label: 'All Loans',     color: 'from-violet-500 to-purple-700' },
-                { to: '/admin/loans?status=active',  icon: '📖', label: 'Active',       color: 'from-emerald-500 to-teal-600' },
-                { to: '/admin/loans?status=overdue', icon: '⚠️', label: 'Overdue',      color: 'from-red-500 to-rose-600' },
+                { to: '/admin/books',                icon: Plus,          label: 'Add Book',  color: 'from-blue-500 to-indigo-600'    },
+                { to: '/admin/loans',                icon: ClipboardList, label: 'All Loans', color: 'from-violet-500 to-purple-700'  },
+                { to: '/admin/loans?status=active',  icon: BookOpen,      label: 'Active',    color: 'from-emerald-500 to-teal-600'   },
+                { to: '/admin/loans?status=overdue', icon: AlertTriangle, label: 'Overdue',   color: 'from-red-500 to-rose-600'       },
               ].map(item => (
                 <Link key={item.to} to={item.to}
                   className="flex flex-col items-center gap-2 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors group">
-                  <div className={`w-10 h-10 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center text-lg shadow-sm group-hover:scale-105 transition-transform`}>
-                    {item.icon}
+                  <div className={`w-10 h-10 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform text-white`}>
+                    <item.icon className="w-5 h-5" />
                   </div>
                   <span className="text-xs font-bold text-gray-700">{item.label}</span>
                 </Link>
@@ -315,7 +319,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center text-base">🕐</div>
+                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500"><Clock className="w-4 h-4" /></div>
                 <p className="font-extrabold text-gray-900 text-sm">Recent Activity</p>
               </div>
               <Link to="/admin/loans" className="text-xs text-blue-600 hover:text-blue-500 font-bold">View all →</Link>
@@ -337,7 +341,7 @@ export default function AdminDashboard() {
       {/* ── Overdue alert banner ── */}
       {!loading && stats.overdue > 0 && (
         <div className="flex items-center gap-4 bg-red-50 border border-red-200 rounded-2xl px-5 py-4">
-          <span className="text-2xl">⚠️</span>
+          <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0" />
           <div className="flex-1">
             <p className="font-extrabold text-red-700 text-sm">
               {stats.overdue} overdue loan{stats.overdue > 1 ? 's' : ''} require attention

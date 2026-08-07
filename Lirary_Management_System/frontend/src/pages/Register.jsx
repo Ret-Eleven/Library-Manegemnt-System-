@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { Library, GraduationCap, Globe, BookOpen, Bell, BarChart3, Zap, CheckCircle, Clock } from 'lucide-react';
 
 /* ── Password strength ───────────────────────────────────────── */
 function calcStrength(pw) {
@@ -80,7 +81,7 @@ function ChooseType({ onSelect }) {
   const cards = [
     {
       type:    'student',
-      icon:    '🎓',
+      icon:    <GraduationCap className="w-10 h-10 text-white" />,
       title:   'I am a Student',
       desc:    'Registered at RUPP or a partner institution. Gain full borrowing access with instant email verification.',
       perks:   ['Instant email verification', '5 books at once', 'Extended loan periods', 'Free fines waiver (first offence)'],
@@ -92,7 +93,7 @@ function ChooseType({ onSelect }) {
     },
     {
       type:    'public',
-      icon:    '🌐',
+      icon:    <Globe className="w-10 h-10 text-white" />,
       title:   'General Public / Staff',
       desc:    'Community member, alumni, or staff. Access the library with a standard public membership.',
       perks:   ['Open to all community', '3 books at once', 'Standard loan period', 'Manual ID verification'],
@@ -107,8 +108,8 @@ function ChooseType({ onSelect }) {
   return (
     <div className="w-full max-w-2xl">
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl text-2xl mb-4 shadow-lg shadow-blue-900/30">
-          📚
+        <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-900/30">
+          <Library className="w-7 h-7 text-white" />
         </div>
         <h1 className="text-2xl font-extrabold text-gray-900">Create your LibraryOS account</h1>
         <p className="text-gray-400 text-sm mt-2">Choose the option that best describes you to get started.</p>
@@ -136,7 +137,7 @@ function ChooseType({ onSelect }) {
                 {c.badgeTxt}
               </span>
 
-              <div className="text-4xl mb-3">{c.icon}</div>
+              <div className="mb-3 flex-shrink-0">{c.icon}</div>
               <h3 className="text-white font-extrabold text-lg mb-2">{c.title}</h3>
               <p className="text-white/50 text-sm leading-relaxed mb-5">{c.desc}</p>
 
@@ -223,7 +224,7 @@ function StudentForm({ onBack, onSuccess, onError, loading, setLoading }) {
           Back
         </button>
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-2xl">🎓</span>
+          <GraduationCap className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-extrabold text-gray-900">Student Registration</h2>
         </div>
         <div className="flex items-center gap-2 mt-2">
@@ -377,7 +378,7 @@ function PublicForm({ onBack, onSuccess, onError, loading, setLoading }) {
           Back
         </button>
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-2xl">🌐</span>
+          <Globe className="w-6 h-6 text-slate-600" />
           <h2 className="text-xl font-extrabold text-gray-900">Public / Staff Registration</h2>
         </div>
         <div className="flex items-center gap-2 mt-2">
@@ -520,7 +521,7 @@ function SuccessScreen({ type }) {
         ? 'bg-emerald-50 border-emerald-200'
         : 'bg-amber-50 border-amber-200'}`}>
         <div className="flex items-center gap-2 mb-2">
-          <span>{isStudent ? '✅' : '⏳'}</span>
+          {isStudent ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <Clock className="w-4 h-4 text-amber-600" />}
           <p className={`text-xs font-bold ${isStudent ? 'text-emerald-700' : 'text-amber-700'}`}>
             {isStudent ? 'Instantly Active' : 'Pending Verification'}
           </p>
@@ -597,7 +598,7 @@ export default function Register() {
 
         <div className="relative flex flex-col h-full px-10 py-10">
           <Link to="/" className="flex items-center gap-3 mb-auto">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-blue-900/50">📚</div>
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/50"><Library className="w-5 h-5 text-white" /></div>
             <div>
               <p className="text-white font-extrabold text-base leading-tight">LibraryOS</p>
               <p className="text-slate-500 text-[11px]">RUPP · Central Library</p>
@@ -617,14 +618,14 @@ export default function Register() {
 
             {/* Benefit list */}
             {[
-              { icon: '📚', text: 'Borrow up to 5 books at once'        },
-              { icon: '🔔', text: 'Smart due-date reminders'             },
-              { icon: '📊', text: 'Full loan history dashboard'          },
-              { icon: '⚡', text: 'Instant online book requests'         },
-              { icon: '🌐', text: 'Access from anywhere, anytime'        },
+              { icon: <BookOpen className="w-4 h-4 text-white" />, text: 'Borrow up to 5 books at once'        },
+              { icon: <Bell className="w-4 h-4 text-white" />,     text: 'Smart due-date reminders'             },
+              { icon: <BarChart3 className="w-4 h-4 text-white" />,text: 'Full loan history dashboard'          },
+              { icon: <Zap className="w-4 h-4 text-white" />,      text: 'Instant online book requests'         },
+              { icon: <Globe className="w-4 h-4 text-white" />,    text: 'Access from anywhere, anytime'        },
             ].map(f => (
               <div key={f.text} className="flex items-center gap-3 mb-3">
-                <div className="w-7 h-7 bg-white/8 rounded-lg flex items-center justify-center text-sm flex-shrink-0">{f.icon}</div>
+                <div className="w-7 h-7 bg-white/8 rounded-lg flex items-center justify-center flex-shrink-0">{f.icon}</div>
                 <span className="text-slate-300 text-sm">{f.text}</span>
               </div>
             ))}
@@ -639,7 +640,7 @@ export default function Register() {
 
         {/* Mobile logo */}
         <Link to="/" className="flex items-center gap-2 mb-6 lg:hidden">
-          <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-base">📚</div>
+          <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center"><Library className="w-4 h-4 text-white" /></div>
           <span className="text-gray-900 font-extrabold">LibraryOS</span>
         </Link>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
+import { Library, BookOpen, CheckCircle, AlertTriangle, Plus, Pencil, Trash2, Inbox, X, Check } from 'lucide-react';
 
 const EMPTY = { title: '', author: '', isbn: '', category: '', total_copies: 1, published_year: '', description: '', cover_url: '' };
 
@@ -112,8 +113,8 @@ function BookModal({ mode, form, onChange, onSave, onClose, saving, imgError, se
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 bg-gradient-to-br ${mode === 'add' ? 'from-blue-500 to-indigo-600' : 'from-amber-400 to-orange-500'} rounded-xl flex items-center justify-center text-lg shadow-sm`}>
-              {mode === 'add' ? '➕' : '✏️'}
+            <div className={`w-9 h-9 bg-gradient-to-br ${mode === 'add' ? 'from-blue-500 to-indigo-600' : 'from-amber-400 to-orange-500'} rounded-xl flex items-center justify-center shadow-sm`}>
+              {mode === 'add' ? <Plus className="w-5 h-5 text-white" /> : <Pencil className="w-5 h-5 text-white" />}
             </div>
             <div>
               <p className="font-extrabold text-gray-900">{mode === 'add' ? 'Add New Book' : 'Edit Book'}</p>
@@ -152,7 +153,7 @@ function BookModal({ mode, form, onChange, onSave, onClose, saving, imgError, se
                   ) : (
                     <div className={`w-full h-full flex items-center justify-center font-extrabold text-lg text-white
                       ${form.title ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-gradient-to-br from-slate-300 to-slate-400'}`}>
-                      {form.title ? initials : <span className="text-2xl opacity-50">📖</span>}
+                      {form.title ? initials : <BookOpen className="w-8 h-8 text-white opacity-50" />}
                     </div>
                   )}
                   {/* hover overlay */}
@@ -283,7 +284,9 @@ function DeleteModal({ book, onConfirm, onClose, saving }) {
       onClick={onClose}>
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center text-xl">🗑️</div>
+          <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-500" />
+          </div>
           <div>
             <p className="font-extrabold text-gray-900">Delete Book</p>
             <p className="text-xs text-gray-400">This action cannot be undone</p>
@@ -300,7 +303,7 @@ function DeleteModal({ book, onConfirm, onClose, saving }) {
           </button>
           <button onClick={onConfirm} disabled={saving}
             className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors flex items-center justify-center gap-2">
-            {saving ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Deleting…</> : '🗑️ Delete'}
+            {saving ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/> Deleting…</> : <><Trash2 className="w-4 h-4" /> Delete</>}
           </button>
         </div>
       </div>
@@ -405,7 +408,7 @@ export default function BookManagement() {
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold
           ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'}`}>
-          {toast.type === 'error' ? '✕' : '✓'} {toast.msg}
+          {toast.type === 'error' ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />} {toast.msg}
         </div>
       )}
 
@@ -427,19 +430,19 @@ export default function BookManagement() {
         <button onClick={openAdd}
           className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold
             px-5 py-2.5 rounded-xl shadow-md shadow-blue-200 transition-colors">
-          ➕ Add Book
+          <Plus className="w-4 h-4" /> Add Book
         </button>
       </div>
 
       {/* ── Mini stats ── */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Total Books',   value: total,      color: 'bg-blue-50 text-blue-600',     icon: '📚' },
-          { label: 'Available',     value: available,  color: 'bg-emerald-50 text-emerald-600',icon: '✅' },
-          { label: 'Out of Stock',  value: outOfStock, color: 'bg-red-50 text-red-500',        icon: '⚠️' },
+          { label: 'Total Books',   value: total,      color: 'bg-blue-50 text-blue-600',     icon: <Library className="w-5 h-5" /> },
+          { label: 'Available',     value: available,  color: 'bg-emerald-50 text-emerald-600',icon: <CheckCircle className="w-5 h-5" /> },
+          { label: 'Out of Stock',  value: outOfStock, color: 'bg-red-50 text-red-500',        icon: <AlertTriangle className="w-5 h-5" /> },
         ].map(s => (
           <div key={s.label} className={`${s.color} rounded-2xl p-4 flex items-center gap-3`}>
-            <span className="text-xl">{s.icon}</span>
+            <span className="flex-shrink-0">{s.icon}</span>
             <div>
               <p className="text-lg font-extrabold leading-none">{loading ? '…' : s.value}</p>
               <p className="text-xs font-semibold mt-0.5 opacity-80">{s.label}</p>
@@ -495,15 +498,17 @@ export default function BookManagement() {
           </div>
         ) : books.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center text-3xl mb-3">📭</div>
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-3">
+              <Inbox className="w-7 h-7 text-gray-400" />
+            </div>
             <p className="font-bold text-gray-700">No books found</p>
             <p className="text-sm text-gray-400 mt-1">
               {search || catFilter ? 'Try adjusting your filters' : 'Add your first book to get started'}
             </p>
             {!search && !catFilter && (
               <button onClick={openAdd}
-                className="mt-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-md shadow-blue-200 transition-colors">
-                ➕ Add First Book
+                className="mt-4 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl shadow-md shadow-blue-200 transition-colors">
+                <Plus className="w-4 h-4" /> Add First Book
               </button>
             )}
           </div>
@@ -558,13 +563,13 @@ export default function BookManagement() {
                       className="flex items-center gap-1 bg-gray-100 hover:bg-blue-50 hover:text-blue-600
                         border border-transparent hover:border-blue-200 text-gray-600 text-xs font-bold
                         px-3 py-1.5 rounded-lg transition-all">
-                      ✏️ Edit
+                      <Pencil className="w-3.5 h-3.5" /> Edit
                     </button>
                     <button onClick={() => openDelete(book)}
                       className="flex items-center gap-1 bg-gray-100 hover:bg-red-50 hover:text-red-500
                         border border-transparent hover:border-red-200 text-gray-400 text-xs font-bold
                         px-2 py-1.5 rounded-lg transition-all">
-                      🗑️
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>

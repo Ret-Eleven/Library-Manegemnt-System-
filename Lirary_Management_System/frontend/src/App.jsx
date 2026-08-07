@@ -20,6 +20,7 @@ import LoanManagement   from './pages/admin/LoanManagement';
 import SuperadminLayout   from './pages/superadmin/SuperadminLayout';
 import SuperadminDashboard from './pages/superadmin/SuperadminDashboard';
 import UserManagement     from './pages/superadmin/UserManagement';
+import ApprovalHistory    from './pages/superadmin/ApprovalHistory';
 
 import ProfilePage  from './pages/shared/ProfilePage';
 import SettingsPage from './pages/shared/SettingsPage';
@@ -73,10 +74,12 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index            element={<SuperadminDashboard />} />
-          <Route path="users"    element={<UserManagement />} />
-          <Route path="profile"  element={<ProfilePage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route index              element={<SuperadminDashboard />} />
+          <Route path="users"      element={<UserManagement />} />
+          <Route path="loans"      element={<LoanManagement />} />
+          <Route path="approvals"  element={<ApprovalHistory />} />
+          <Route path="profile"    element={<ProfilePage />} />
+          <Route path="settings"   element={<SettingsPage />} />
         </Route>
 
         <Route path="/"   element={<Home />} />

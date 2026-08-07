@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { BookOpen, Clock, AlertTriangle, DollarSign, Search, ClipboardList, User, Settings as SettingsIcon, Inbox } from 'lucide-react';
 
 /* ── status config ── */
 const STATUS = {
@@ -15,7 +16,7 @@ const STATUS = {
 function StatCard({ icon, label, value, sub, bg, to }) {
   const inner = (
     <div className={`${bg} rounded-2xl p-5 flex items-center gap-4 border border-white/60 hover:shadow-md transition-shadow`}>
-      <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+      <div className="w-12 h-12 bg-white/70 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
         {icon}
       </div>
       <div>
@@ -34,7 +35,7 @@ function ActionCard({ icon, label, desc, to, color }) {
     <Link to={to}
       className={`group ${color} rounded-2xl p-5 border border-white/50 hover:shadow-lg hover:-translate-y-1
         transition-all duration-200 flex flex-col gap-3`}>
-      <div className="w-12 h-12 bg-white/60 rounded-xl flex items-center justify-center text-2xl shadow-sm
+      <div className="w-12 h-12 bg-white/60 rounded-xl flex items-center justify-center shadow-sm
         group-hover:scale-110 transition-transform">
         {icon}
       </div>
@@ -56,7 +57,9 @@ function Cover({ url, title }) {
     <div className="w-12 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-slate-700 to-slate-900 flex-shrink-0 shadow-sm">
       {url && !err
         ? <img src={url} alt={title} className="w-full h-full object-cover" onError={() => setErr(true)} />
-        : <div className="w-full h-full flex items-center justify-center text-xl opacity-40">📖</div>}
+        : <div className="w-full h-full flex items-center justify-center opacity-40">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>}
     </div>
   );
 }
@@ -74,7 +77,9 @@ function NewArrivalCard({ book }) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={() => setImgErr(true)} />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl opacity-30">📖</div>
+            <div className="w-full h-full flex items-center justify-center opacity-20">
+              <BookOpen className="w-10 h-10 text-white" />
+            </div>
           )}
         </div>
       </div>
@@ -126,7 +131,7 @@ export default function UserHome() {
           <div>
             <p className="text-white/60 text-sm font-medium">{greeting},</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">
-              {user?.name?.split(' ')[0]} 👋
+              {user?.name?.split(' ')[0]}
             </h1>
             <p className="text-white/50 text-sm mt-2 max-w-md">
               Welcome back to LibraryMS. You have{' '}
@@ -148,13 +153,13 @@ export default function UserHome() {
       <div>
         <h2 className="text-base font-extrabold text-gray-900 mb-3">My Account Summary</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <StatCard icon="📖" label="Active Loans"    value={loading ? '…' : active.length}
+          <StatCard icon={<BookOpen className="w-6 h-6 text-blue-500" />}      label="Active Loans"    value={loading ? '…' : active.length}
             sub="Currently borrowed" bg="bg-blue-50"    to="/user/history" />
-          <StatCard icon="⏳" label="Pending"         value={loading ? '…' : pending.length}
+          <StatCard icon={<Clock className="w-6 h-6 text-yellow-500" />}       label="Pending"         value={loading ? '…' : pending.length}
             sub="Awaiting approval"  bg="bg-yellow-50"  to="/user/history" />
-          <StatCard icon="⚠️" label="Overdue"         value={loading ? '…' : overdue.length}
+          <StatCard icon={<AlertTriangle className="w-6 h-6 text-red-500" />}  label="Overdue"         value={loading ? '…' : overdue.length}
             sub="Needs attention"    bg="bg-red-50"     to="/user/history" />
-          <StatCard icon="💰" label="Outstanding Fine" value={loading ? '…' : `$${totalFine.toFixed(2)}`}
+          <StatCard icon={<DollarSign className="w-6 h-6 text-amber-500" />}   label="Outstanding Fine" value={loading ? '…' : `$${totalFine.toFixed(2)}`}
             sub="Total due"          bg="bg-amber-50" />
         </div>
       </div>
@@ -182,7 +187,7 @@ export default function UserHome() {
             </div>
           ) : recent.length === 0 ? (
             <div className="flex flex-col items-center py-10 text-center">
-              <div className="text-4xl mb-2">📭</div>
+              <Inbox className="w-10 h-10 text-gray-300 mb-2" />
               <p className="font-bold text-gray-700 text-sm">No loans yet</p>
               <p className="text-xs text-gray-400 mt-1">Browse the catalog to borrow your first book</p>
               <Link to="/user/catalog"
@@ -227,16 +232,16 @@ export default function UserHome() {
           <div>
             <h2 className="font-extrabold text-gray-900 mb-3">Quick Actions</h2>
             <div className="grid grid-cols-1 gap-3">
-              <ActionCard icon="🔍" label="Browse Catalog"  to="/user/catalog"
+              <ActionCard icon={<Search className="w-6 h-6 text-blue-600" />}       label="Browse Catalog"  to="/user/catalog"
                 desc="Search and explore all available books"
                 color="bg-blue-50" />
-              <ActionCard icon="📋" label="My Borrowings"   to="/user/history"
+              <ActionCard icon={<ClipboardList className="w-6 h-6 text-indigo-600" />} label="My Borrowings"   to="/user/history"
                 desc="Track loans, due dates, and fines"
                 color="bg-indigo-50" />
-              <ActionCard icon="👤" label="My Profile"      to="/user/profile"
+              <ActionCard icon={<User className="w-6 h-6 text-purple-600" />}       label="My Profile"      to="/user/profile"
                 desc="View and update your account info"
                 color="bg-purple-50" />
-              <ActionCard icon="⚙️" label="Settings"        to="/user/settings"
+              <ActionCard icon={<SettingsIcon className="w-6 h-6 text-gray-600" />} label="Settings"        to="/user/settings"
                 desc="Manage your preferences"
                 color="bg-gray-50" />
             </div>
