@@ -7,12 +7,6 @@ import {
   CheckCircle, X, Check, Inbox,
 } from 'lucide-react';
 
-<<<<<<< HEAD
-function StatCard({ label, value, icon, color, to }) {
-  const inner = (
-    <div className={`card flex items-center gap-4 ${to ? 'hover:shadow-md transition-shadow cursor-pointer' : ''}`}>
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${color}`}>
-=======
 /* ── helpers ─────────────────────────────────────────────────── */
 const fmt = (d) =>
   d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
@@ -27,7 +21,6 @@ function StatCard({ icon, value, label, sub, gradient, loading }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
       <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-md flex-shrink-0`}>
->>>>>>> testing
         {icon}
       </div>
       <div className="min-w-0">
@@ -39,7 +32,6 @@ function StatCard({ icon, value, label, sub, gradient, loading }) {
       </div>
     </div>
   );
-  return to ? <Link to={to} className="block">{inner}</Link> : inner;
 }
 
 /* ── Book cover ──────────────────────────────────────────────── */
@@ -141,18 +133,11 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-<<<<<<< HEAD
-      const [loansRes, totalRes, booksRes] = await Promise.all([
-        api.get('/api/loans', { params: { status: 'pending', limit: 10 } }),
-        api.get('/api/loans', { params: { limit: 1 } }),
-        api.get('/api/books', { params: { limit: 1 } }),
-=======
       const [r1, r2, r3, r4] = await Promise.all([
         api.get('/api/loans', { params: { status: 'pending', limit: 8 } }),
         api.get('/api/loans', { params: { status: 'active',  limit: 200 } }),
         api.get('/api/books', { params: { limit: 1 } }),
         api.get('/api/loans', { params: { limit: 6 } }),
->>>>>>> testing
       ]);
 
       const activeList = r2.data.loans || [];
@@ -161,16 +146,10 @@ export default function AdminDashboard() {
       setPending(r1.data.loans || []);
       setRecent(r4.data.loans || []);
       setStats({
-<<<<<<< HEAD
-        pending: loansRes.data.total,
-        total:   totalRes.data.total,
-        books:   booksRes.data.total,
-=======
         pending: r1.data.total || 0,
         active:  r2.data.total || 0,
         overdue: overdueCount,
         books:   r3.data.total || 0,
->>>>>>> testing
       });
     } catch {
       showToast('Failed to load dashboard data', 'error');
@@ -246,14 +225,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Pending Requests"  value={stats?.pending ?? '—'} icon="⏳" color="bg-yellow-50" />
-        <StatCard label="Total Transactions" value={stats?.total   ?? '—'} icon="📋" color="bg-blue-50" />
-        <StatCard label="Books in Library"   value={stats?.books   ?? '—'} icon="📚" color="bg-purple-50" to="/admin/books" />
-        <StatCard label="All Loans"          value={stats?.total   ?? '—'} icon="🔍" color="bg-green-50"  to="/admin/loans" />
-=======
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -276,7 +247,6 @@ export default function AdminDashboard() {
           sub="In catalog"
           gradient="from-violet-500 to-purple-700" loading={loading}
         />
->>>>>>> testing
       </div>
 
       {/* ── Main grid ── */}

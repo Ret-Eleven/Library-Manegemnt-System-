@@ -1,10 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-<<<<<<< HEAD
-const cors = require('cors');
-=======
 const cors    = require('cors');
->>>>>>> testing
 
 const authRoutes = require('./routes/auth');
 const bookRoutes = require('./routes/books');
@@ -17,11 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
-<<<<<<< HEAD
-app.use('/api/auth', authRoutes);
-=======
 app.use('/api/auth',  authRoutes);
->>>>>>> testing
 app.use('/api/books', bookRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/users', userRoutes);
