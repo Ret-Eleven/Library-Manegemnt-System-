@@ -1,6 +1,10 @@
 {
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
+<<<<<<< HEAD
     "@supabase/supabase-js": "^2.106.2"
+=======
+    "@supabase/supabase-js": "^2.110.0"
+>>>>>>> testing
   }
 }

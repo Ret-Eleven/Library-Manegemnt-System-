@@ -71,6 +71,7 @@ export default function UserManagement() {
   const [page, setPage]             = useState(1);
   const [search, setSearch]         = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+<<<<<<< HEAD
   const [loading, setLoading]       = useState(true);
   const [modal, setModal]           = useState(null);
   const [selected, setSelected]     = useState(null);
@@ -79,6 +80,15 @@ export default function UserManagement() {
   const [saving, setSaving]         = useState(false);
   const [toast, setToast]           = useState(null);
   const [roleCounts, setRoleCounts] = useState({ user: 0, admin: 0, superadmin: 0 });
+=======
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal]     = useState(null); // null | 'create' | 'edit' | 'delete'
+  const [selected, setSelected] = useState(null);
+  const [form, setForm]       = useState(EMPTY_FORM);
+  const [editForm, setEditForm] = useState({ name: '', role: 'user', is_active: true });
+  const [saving, setSaving]   = useState(false);
+  const [toast, setToast]     = useState(null);
+>>>>>>> testing
 
   const LIMIT = 15;
 
@@ -116,10 +126,30 @@ export default function UserManagement() {
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
+<<<<<<< HEAD
   const openCreate = () => { setForm(EMPTY_FORM); setModal('create'); };
   const openEdit   = (u)  => { setSelected(u); setEditForm({ name: u.name, role: u.role, is_active: u.is_active === 1 }); setModal('edit'); };
   const openToggle = (u)  => { setSelected(u); setModal('toggle'); };
   const closeModal = ()   => { setModal(null); setSelected(null); };
+=======
+  const openCreate = () => {
+    setForm(EMPTY_FORM);
+    setModal('create');
+  };
+
+  const openEdit = (user) => {
+    setSelected(user);
+    setEditForm({ name: user.name, role: user.role, is_active: user.is_active === 1 });
+    setModal('edit');
+  };
+
+  const openDelete = (user) => {
+    setSelected(user);
+    setModal('delete');
+  };
+
+  const closeModal = () => { setModal(null); setSelected(null); };
+>>>>>>> testing
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -147,11 +177,19 @@ export default function UserManagement() {
     } finally { setSaving(false); }
   };
 
+<<<<<<< HEAD
   const handleToggle = async () => {
     setSaving(true);
     try {
       await api.delete(`/api/users/${selected.id}`);
       showToast(selected.is_active ? 'User deactivated.' : 'User activated.');
+=======
+  const handleDelete = async () => {
+    setSaving(true);
+    try {
+      await api.delete(`/api/users/${selected.id}`);
+      showToast('User deleted.');
+>>>>>>> testing
       closeModal();
       fetchUsers();
     } catch (err) {
@@ -278,6 +316,7 @@ export default function UserManagement() {
 
                     {/* Status */}
                     <td>
+<<<<<<< HEAD
                       <span className={`badge ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
                         {u.is_active ? '● Active' : '● Inactive'}
                       </span>
@@ -300,6 +339,13 @@ export default function UserManagement() {
                             className={`btn-sm ${u.is_active ? 'btn-danger' : 'btn-success'}`}
                           >
                             {u.is_active ? '🚫 Deactivate' : '✅ Activate'}
+=======
+                      <div className="flex gap-2">
+                        <button onClick={() => openEdit(user)} className="btn-secondary btn-sm">Edit</button>
+                        {user.role !== 'superadmin' && (
+                          <button onClick={() => openDelete(user)} className="btn-danger btn-sm">
+                            {user.is_active ? 'Delete' : 'Deleted'}
+>>>>>>> testing
                           </button>
                         )}
                       </div>
@@ -338,6 +384,7 @@ export default function UserManagement() {
 
       {/* ── Create Modal ── */}
       {modal === 'create' && (
+<<<<<<< HEAD
         <Modal title="Create New User" icon="👤" onClose={closeModal}>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
@@ -366,6 +413,96 @@ export default function UserManagement() {
               <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
               <button type="submit" className="btn-primary" disabled={saving}>
                 {saving ? 'Creating…' : '+ Create User'}
+=======
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-5">Create User</h2>
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div>
+                <label className="label">Full Name *</label>
+                <input className="input" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Email *</label>
+                <input type="email" className="input" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Password *</label>
+                <input type="password" className="input" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} />
+              </div>
+              <div>
+                <label className="label">Role</label>
+                <select className="input" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}>
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? 'Creating…' : 'Create User'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit user modal */}
+      {modal === 'edit' && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-1">Edit User</h2>
+            <p className="text-gray-500 text-sm mb-5">{selected.email}</p>
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div>
+                <label className="label">Full Name</label>
+                <input className="input" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+              </div>
+              <div>
+                <label className="label">Role</label>
+                <select className="input" value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+                  disabled={selected.role === 'superadmin'}>
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                  <option value="superadmin">Superadmin</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="is_active"
+                  checked={editForm.is_active}
+                  onChange={e => setEditForm({ ...editForm, is_active: e.target.checked })}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <label htmlFor="is_active" className="text-sm text-gray-700">Account active</label>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete modal */}
+      {modal === 'delete' && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 className="text-xl font-bold mb-2">Delete Account</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <strong>{selected.name}</strong>'s account?
+              Their pending loan requests will be rejected.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={closeModal} className="btn-secondary">Cancel</button>
+              <button onClick={handleDelete} className="btn-danger" disabled={saving}>
+                {saving ? 'Deleting…' : 'Delete'}
+>>>>>>> testing
               </button>
             </div>
           </form>

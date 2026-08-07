@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import { Library, Users, ClipboardList, AlertTriangle, DollarSign, CreditCard } from 'lucide-react';
 
 const STATUS_BADGE = {
   pending:  'bg-yellow-100 text-yellow-700',
@@ -96,6 +97,7 @@ export default function SuperadminDashboard() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* ── Alert banners ── */}
       {hasAlerts && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -138,6 +140,16 @@ export default function SuperadminDashboard() {
         <KpiCard icon="⚠️" label="Overdue Loans"     value={stats.overdueLoans}                                                      color="bg-red-50"     to="/admin/loans" />
         <KpiCard icon="💰" label="Fines Collected"   value={`$${Number(stats.totalFinesCollected).toFixed(2)}`}                     color="bg-emerald-50" />
         <KpiCard icon="💳" label="Fines Pending"     value={`$${Number(stats.totalFinesPending).toFixed(2)}`}                       color="bg-amber-50" />
+=======
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Stat icon={<Library className="w-7 h-7" />}       label="Total Books"    value={stats.totalBooks}     sub={`${stats.totalCopies} total copies`}  color="bg-blue-50" />
+        <Stat icon={<Users className="w-7 h-7" />}         label="Active Users"   value={stats.totalUsers}     color="bg-green-50" />
+        <Stat icon={<ClipboardList className="w-7 h-7" />} label="Active Loans"   value={stats.activeLoans}    sub={`${stats.pendingRequests} pending`}   color="bg-purple-50" />
+        <Stat icon={<AlertTriangle className="w-7 h-7" />} label="Overdue Loans"  value={stats.overdueLoans}   color="bg-red-50" />
+        <Stat icon={<DollarSign className="w-7 h-7" />}    label="Fines Collected" value={`$${Number(stats.totalFinesCollected).toFixed(2)}`} color="bg-emerald-50" />
+        <Stat icon={<CreditCard className="w-7 h-7" />}    label="Fines Pending"  value={`$${Number(stats.totalFinesPending).toFixed(2)}`}   color="bg-amber-50" />
+>>>>>>> testing
       </div>
 
       {/* ── Two columns ── */}
